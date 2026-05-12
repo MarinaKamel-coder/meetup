@@ -1,7 +1,7 @@
 "use server"
 
 import { auth } from "@clerk/nextjs/server";
-import prisma  from "@/src/lib/prisma";
+import prisma  from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
 // 1. Envoyer une demande (Joueur)
@@ -13,7 +13,7 @@ export async function createJoinRequest(teamId: string, message?: string) {
   if (!dbUser) return { error: "Utilisateur introuvable" };
 
   try {
-    const request = await prisma.joinRequest.create({
+    await prisma.joinRequest.create({
       data: {
         playerId: dbUser.id,
         teamId: teamId,
@@ -31,7 +31,14 @@ export async function createJoinRequest(teamId: string, message?: string) {
 
 // 2. Accepter une demande (Organisateur) - LA TRANSACTION CRITIQUE
 export async function acceptJoinRequest(requestId: string) {
-  return await prisma.$transaction(async (tx) => {
+    //ajout de ces deux const, car sinon n'importe qui peut appeler cette action !
+    const { userId } = await auth();
+    if (!userId) return { error: "Non connecté" };
+
+    const dbUser = await prisma.user.findUnique({ where: { clerkId: userId } });
+    if (!dbUser || dbUser.role !== "ORGANIZER") return { error: "Interdit" };
+
+    return await prisma.$transaction(async (tx) => {
     // 1. Récupérer la demande et les infos d'équipe
     const request = await tx.joinRequest.findUnique({
       where: { id: requestId },
