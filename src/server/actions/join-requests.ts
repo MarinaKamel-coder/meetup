@@ -63,3 +63,44 @@ export async function acceptJoinRequest(requestId: string) {
     return { success: true };
   });
 }
+export async function cancelJoinRequest(requestId: string) {
+  try {
+    const { userId } = await auth();
+    if (!userId) return { error: "Vous devez être connecté." };
+
+    // 1. Récupérer la demande avec les infos du joueur pour vérifier l'identité
+    const request = await prisma.joinRequest.findUnique({
+      where: { id: requestId },
+      include: { 
+        player: { select: { clerkId: true } },
+        team: { select: { tournamentId: true } } 
+      }
+    });
+
+    if (!request) return { error: "Demande introuvable." };
+
+    // 2. Sécurité : Seul l'auteur de la demande peut l'annuler
+    if (request.player.clerkId !== userId) {
+      return { error: "Action non autorisée." };
+    }
+
+    // 3. Sécurité métier : On ne peut pas annuler si l'organisateur a déjà tranché
+    if (request.status !== "PENDING") {
+      return { error: "Cette demande a déjà été traitée et ne peut plus être annulée." };
+    }
+
+    // 4. Suppression
+    await prisma.joinRequest.delete({
+      where: { id: requestId }
+    });
+
+    // 5. Mise à jour de l'UI pour le joueur et le tournoi
+    revalidatePath("/my-requests");
+    revalidatePath(`/teams/${request.teamId}`);
+    
+    return { success: true };
+  } catch (error) {
+    console.error("Erreur annulation demande:", error);
+    return { error: "Une erreur est survenue lors de l'annulation." };
+  }
+}
