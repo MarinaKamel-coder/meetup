@@ -36,7 +36,7 @@ export default function AdminLayout({
             ))}
           </nav>
 
-          <UserButton afterSignOutUrl="/" />
+          <UserButton />
         </div>
       </header>
 

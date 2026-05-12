@@ -36,8 +36,7 @@ export default function OrganizerLayout({
               </Link>
             ))}
           </nav>
-
-          <UserButton afterSignOutUrl="/" />
+          <UserButton/>
         </div>
       </header>
 

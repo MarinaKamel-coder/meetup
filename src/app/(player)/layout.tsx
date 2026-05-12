@@ -37,7 +37,7 @@ export default function PlayerLayout({
           </nav>
 
           <div className="flex items-center gap-3">
-            <UserButton afterSignOutUrl="/" />
+            <UserButton />
           </div>
         </div>
       </header>
