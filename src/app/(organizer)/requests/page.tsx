@@ -33,16 +33,34 @@ export default async function RequestsPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="text-2xl font-bold text-slate-900">Demandes d&apos;adhésion</h2>
-        <p className="text-sm text-slate-500 mt-1">
-          Gérez les demandes des joueurs pour vos équipes.
-        </p>
+
+      {/* Header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-8 shadow-lg">
+        <div className="absolute top-0 right-0 h-40 w-40 translate-x-8 -translate-y-8 rounded-full bg-emerald-500/20 blur-2xl" />
+        <div className="relative z-10 flex items-start justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-widest text-emerald-400">
+              Gestion Organisateur
+            </p>
+            <h2 className="mt-2 text-3xl font-black text-white">
+              Demandes d&apos;adhésion
+            </h2>
+            <p className="mt-2 text-slate-400">
+              Acceptez ou refusez les candidatures des joueurs.
+            </p>
+          </div>
+          {pending.length > 0 && (
+            <div className="rounded-2xl bg-amber-500/20 border border-amber-500/30 px-5 py-3 text-center">
+              <p className="text-3xl font-black text-amber-400">{pending.length}</p>
+              <p className="text-xs font-medium text-amber-300">en attente</p>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Demandes en attente */}
+      {/* En attente */}
       <div>
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">
+        <h3 className="text-sm font-semibold uppercase tracking-widest text-slate-500 mb-4">
           En attente{" "}
           <span className="ml-2 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
             {pending.length}
@@ -50,74 +68,89 @@ export default async function RequestsPage() {
         </h3>
 
         {pending.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
-            <p className="text-sm text-slate-500">Aucune demande en attente.</p>
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
+            <p className="text-4xl mb-3">🎉</p>
+            <p className="text-sm font-semibold text-slate-700">
+              Toutes les demandes ont été traitées !
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
             {pending.map((request) => (
               <div
                 key={request.id}
-                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition"
               >
                 <div className="flex items-start justify-between gap-4">
-                  {/* Infos joueur */}
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-slate-200 flex items-center justify-center text-sm font-bold text-slate-600">
+                  {/* Joueur */}
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-lg font-black text-white shadow-lg shadow-emerald-500/20">
                       {request.player.fullName.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <p className="font-semibold text-slate-900">
+                      <p className="font-bold text-slate-900 text-lg">
                         {request.player.fullName}
                       </p>
-                      <p className="text-xs text-slate-500">
-                        {request.player.playerProfile?.city ?? "Ville inconnue"} •{" "}
-                        {request.player.playerProfile?.favoriteSport ?? "Sport inconnu"} •{" "}
-                        {request.player.playerProfile?.level ?? "Niveau inconnu"}
-                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        {request.player.playerProfile?.city && (
+                          <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
+                            📍 {request.player.playerProfile.city}
+                          </span>
+                        )}
+                        {request.player.playerProfile?.favoriteSport && (
+                          <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
+                            🏅 {request.player.playerProfile.favoriteSport}
+                          </span>
+                        )}
+                        {request.player.playerProfile?.level && (
+                          <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
+                            {request.player.playerProfile.level === "BEGINNER" ? "🌱 Débutant" :
+                             request.player.playerProfile.level === "INTERMEDIATE" ? "⚡ Intermédiaire" :
+                             "🔥 Avancé"}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Boutons accepter / refuser */}
+                  {/* Actions */}
                   <RequestActions requestId={request.id} />
                 </div>
 
-                {/* Équipe + tournoi */}
-                <div className="mt-3 flex gap-2">
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-                    {request.team.name}
-                  </span>
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-                    {request.team.tournament.name}
-                  </span>
-                </div>
+                {/* Équipe + message */}
+                <div className="mt-4 pl-16">
+                  <div className="flex gap-2 flex-wrap">
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                      🏅 {request.team.name}
+                    </span>
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                      🏆 {request.team.tournament.name}
+                    </span>
+                  </div>
 
-                {/* Message */}
-                {request.message && (
-                  <p className="mt-3 text-sm text-slate-600 italic border-l-2 border-slate-200 pl-3">
-                    {request.message}
+                  {request.message && (
+                    <p className="mt-3 text-sm text-slate-600 italic border-l-2 border-emerald-300 pl-3">
+                      &quot;{request.message}&quot;
+                    </p>
+                  )}
+
+                  <p className="mt-2 text-xs text-slate-400">
+                    Reçue le{" "}
+                    {new Date(request.createdAt).toLocaleDateString("fr-CA", {
+                      day: "numeric", month: "long", year: "numeric",
+                    })}
                   </p>
-                )}
-
-                {/* Date */}
-                <p className="mt-2 text-xs text-slate-400">
-                  Reçu le{" "}
-                  {new Date(request.createdAt).toLocaleDateString("fr-CA", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  })}
-                </p>
+                </div>
               </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* Demandes traitées */}
+      {/* Traitées */}
       {treated.length > 0 && (
         <div>
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">
+          <h3 className="text-sm font-semibold uppercase tracking-widest text-slate-500 mb-4">
             Traitées{" "}
             <span className="ml-2 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
               {treated.length}
@@ -127,27 +160,33 @@ export default async function RequestsPage() {
             {treated.map((request) => (
               <div
                 key={request.id}
-                className="rounded-2xl border border-slate-200 bg-slate-50 p-4 flex items-center justify-between"
+                className={`rounded-2xl border p-4 flex items-center justify-between ${
+                  request.status === "ACCEPTED"
+                    ? "border-emerald-200 bg-emerald-50/50"
+                    : "border-slate-200 bg-slate-50"
+                }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-full bg-slate-200 flex items-center justify-center text-sm font-bold text-slate-500">
+                  <div className={`h-9 w-9 rounded-xl flex items-center justify-center text-sm font-black text-white ${
+                    request.status === "ACCEPTED"
+                      ? "bg-emerald-500"
+                      : "bg-slate-400"
+                  }`}>
                     {request.player.fullName.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-slate-700">
+                    <p className="text-sm font-semibold text-slate-800">
                       {request.player.fullName}
                     </p>
                     <p className="text-xs text-slate-400">{request.team.name}</p>
                   </div>
                 </div>
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                    request.status === "ACCEPTED"
-                      ? "bg-emerald-100 text-emerald-700"
-                      : "bg-red-100 text-red-700"
-                  }`}
-                >
-                  {request.status === "ACCEPTED" ? "Acceptée" : "Refusée"}
+                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                  request.status === "ACCEPTED"
+                    ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                    : "bg-red-100 text-red-700 border border-red-200"
+                }`}>
+                  {request.status === "ACCEPTED" ? "✅ Acceptée" : "❌ Refusée"}
                 </span>
               </div>
             ))}
