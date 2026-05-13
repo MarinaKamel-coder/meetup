@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-t-text-center">
+    <main className="flex min-h-screen flex-col items-center justify-center px-4 text-center">
       <h1 className="text-4xl font-bold tracking-tight">
         Plateforme de Gestion de Ligues Sportives
       </h1>
