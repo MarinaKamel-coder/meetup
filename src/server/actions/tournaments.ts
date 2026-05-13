@@ -1,8 +1,8 @@
 "use server"
 
 import { auth } from "@clerk/nextjs/server";
-import prisma  from "@/src/lib/prisma";
-import { tournamentSchema } from "@/src/lib/validations/tournaments";
+import prisma  from "@/lib/prisma";
+import { tournamentSchema } from "@/lib/validations/tournaments";
 import { revalidatePath } from "next/cache";
 
 export async function createTournament(formData: unknown) {

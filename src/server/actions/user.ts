@@ -1,8 +1,8 @@
 "use server"
 
 import { auth } from "@clerk/nextjs/server";
-import  prisma  from "@/src/lib/prisma";
-import { playerProfileSchema } from "@/src/lib/validations/player";
+import  prisma  from "@/lib/prisma";
+import { playerProfileSchema } from "@/lib/validations/player";
 import { revalidatePath } from "next/cache";
 
 export async function updatePlayerProfile(data: unknown) {

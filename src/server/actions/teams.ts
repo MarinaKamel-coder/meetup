@@ -1,8 +1,8 @@
 "use server"
 
 import { auth } from "@clerk/nextjs/server";
-import prisma  from "@/src/lib/prisma";
-import { teamSchema } from "@/src/lib/validations/teams";
+import prisma  from "@/lib/prisma";
+import { teamSchema } from "@/lib/validations/teams";
 import { revalidatePath } from "next/cache";
 
 export async function createTeam(data: unknown) {
