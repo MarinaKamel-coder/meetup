@@ -20,7 +20,7 @@ export default async function TeamsPage() {
       <div>
         <h2 className="text-2xl font-bold text-slate-900">Équipes disponibles</h2>
         <p className="text-sm text-slate-500 mt-1">
-          Trouvez une équipe et envoyez une demande d'adhésion.
+          Trouvez une équipe et envoyez une demande d&apos;adhésion.
         </p>
       </div>
 

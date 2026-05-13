@@ -1,4 +1,5 @@
 // src/app/(player)/teams/[id]/page.tsx
+// src/app/(player)/teams/[id]/page.tsx
 import { notFound } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
@@ -7,12 +8,13 @@ import JoinButton from "@/components/JoinButton";
 export default async function TeamDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const { userId } = await auth();
 
   const team = await prisma.team.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       tournament: true,
       members: { select: { id: true, fullName: true } },
@@ -67,7 +69,7 @@ export default async function TeamDetailPage({
 
         <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
           <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
-            Frais d'inscription
+            Frais d&apos;inscription
           </p>
           <p className="mt-1 text-2xl font-bold text-slate-900">
             {team.tournament.entryFee === 0
@@ -83,7 +85,7 @@ export default async function TeamDetailPage({
           Membres ({team._count.members})
         </h3>
         {team.members.length === 0 ? (
-          <p className="text-sm text-slate-400">Aucun membre pour l'instant.</p>
+          <p className="text-sm text-slate-400">Aucun membre pour l&apos;instant.</p>
         ) : (
           <ul className="space-y-2">
             {team.members.map((member) => (

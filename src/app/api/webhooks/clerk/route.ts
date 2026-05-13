@@ -14,48 +14,52 @@ export async function POST(req: Request) {
 
   // Vérification de la signature Svix
   const wh = new Webhook(secret);
-  let evt: { type: string; data: any };
+  let evt: { type: string; data: Record<string, unknown> };
 
   try {
     evt = wh.verify(payload, {
       "svix-id": h.get("svix-id")!,
       "svix-timestamp": h.get("svix-timestamp")!,
       "svix-signature": h.get("svix-signature")!,
-    }) as { type: string; data: any };
+    }) as { type: string; data: Record<string, unknown> };
   } catch (err) {
     console.error("Signature Svix invalide:", err);
     return new Response("Signature invalide", { status: 400 });
-  }
+  }  
+if (evt.type === "user.created" || evt.type === "user.updated") {
+  const data = evt.data as {
+    id: string;
+    email_addresses: { email_address: string }[];
+    first_name?: string;
+    last_name?: string;
+  };
 
-  // Traitement des événements
-  if (evt.type === "user.created" || evt.type === "user.updated") {
-    const { id, email_addresses, first_name, last_name } = evt.data;
+  const email = data.email_addresses?.[0]?.email_address ?? "";
+  const fullName = `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim() || "Utilisateur";
 
-    const email = email_addresses?.[0]?.email_address ?? "";
-    const fullName = `${first_name ?? ""} ${last_name ?? ""}`.trim() || "Utilisateur";
+  await prisma.user.upsert({
+    where: { clerkId: data.id },
+    create: {
+      clerkId: data.id,
+      email,
+      fullName,
+      role: "PLAYER",
+    },
+    update: {
+      email,
+      fullName,
+    },
+  });
 
-    await prisma.user.upsert({
-      where: { clerkId: id },
-      create: {
-        clerkId: id,
-        email,
-        fullName,
-        role: "PLAYER", // rôle par défaut
-      },
-      update: {
-        email,
-        fullName,
-      },
-    });
+  console.log(`✅ User ${evt.type === "user.created" ? "créé" : "mis à jour"}: ${email}`);
+}
 
-    console.log(`✅ User ${evt.type === "user.created" ? "créé" : "mis à jour"}: ${email}`);
-  }
-
-  if (evt.type === "user.deleted") {
-    const { id } = evt.data;
-    await prisma.user.deleteMany({ where: { clerkId: id } });
-    console.log(`🗑️ User supprimé: ${id}`);
-  }
+if (evt.type === "user.deleted") {
+  const data = evt.data as { id: string };
+  await prisma.user.deleteMany({ where: { clerkId: data.id } });
+  console.log(`🗑️ User supprimé: ${data.id}`);
+}
+  
 
   return new Response("ok", { status: 200 });
 }

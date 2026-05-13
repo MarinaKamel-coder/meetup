@@ -4,8 +4,7 @@ import { UserButton } from "@clerk/nextjs";
 const organizerLinks = [
     { href: "/dashboard", label: "Dashboard" }, 
     { href: "/tournaments", label: "Tournois" }, 
-    { href: "/requests", label: "Demandes" }, 
-    { href: "/matches", label: "Matchs" },
+    { href: "/requests", label: "Demandes" },    
 ]; 
 
 export default function OrganizerLayout({

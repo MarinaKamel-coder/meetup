@@ -39,7 +39,7 @@ export default async function AdminPage() {
             Administration
           </p>
           <h1 className="mt-1 text-3xl font-bold text-slate-900">
-            Panneau d'administration
+            Panneau d&apos;administration
           </h1>
           <p className="mt-2 text-sm text-slate-500">
             Vue globale de toute la plateforme.
