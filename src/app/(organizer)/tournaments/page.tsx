@@ -1,195 +1,106 @@
 // src/app/(organizer)/tournaments/page.tsx
-"use client"
+// src/app/(organizer)/tournaments/page.tsx
+import Link from "next/link";
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
+import prisma from "@/lib/prisma";
+import CreateTournamentForm from "@/components/CreateTournamentForm";
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { createTournament } from "@/server/actions/tournaments";
+export default async function TournamentsPage() {
+  const { userId } = await auth();
+  if (!userId) redirect("/sign-in");
 
-type TournamentFormData = {
-  name: string;
-  sport: string;
-  city: string;
-  startDate: string;
-  entryFee: number;
-  currency: string;
-};
+  const dbUser = await prisma.user.findUnique({ where: { clerkId: userId } });
+  if (!dbUser || dbUser.role !== "ORGANIZER") redirect("/dashboard");
 
-export default function TournamentsPage() {
-  const [showForm, setShowForm] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [isError, setIsError] = useState(false);
-
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors, isSubmitting },
-  } = useForm<TournamentFormData>({
-    defaultValues: { entryFee: 0, currency: "CAD" },
+  const tournaments = await prisma.tournament.findMany({
+    where: { organizerId: dbUser.id },
+    include: { _count: { select: { teams: true } } },
+    orderBy: { createdAt: "desc" },
   });
-
-  async function onSubmit(data: TournamentFormData) {
-    // Validation manuelle simple
-    if (!data.name || data.name.length < 5) {
-      setIsError(true);
-      setMessage("Le nom doit contenir au moins 5 caractères.");
-      return;
-    }
-    if (!data.sport) {
-      setIsError(true);
-      setMessage("Le sport est requis.");
-      return;
-    }
-    if (!data.city) {
-      setIsError(true);
-      setMessage("La ville est requise.");
-      return;
-    }
-    if (!data.startDate) {
-      setIsError(true);
-      setMessage("La date est requise.");
-      return;
-    }
-
-    const result = await createTournament({
-      ...data,
-      entryFee: Number(data.entryFee),
-      startDate: new Date(data.startDate),
-    });
-
-    if (result?.error) {
-      setIsError(true);
-      setMessage(result.error);
-    } else {
-      setIsError(false);
-      setMessage("Tournoi créé avec succès !");
-      reset();
-      setShowForm(false);
-    }
-  }
 
   return (
     <div className="space-y-6">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900">Mes tournois</h2>
-          <p className="text-sm text-slate-500 mt-1">
-            Créez et gérez vos compétitions sportives.
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-8 shadow-lg">
+        <div className="absolute top-0 right-0 h-40 w-40 translate-x-8 -translate-y-8 rounded-full bg-emerald-500/20 blur-2xl" />
+        <div className="relative z-10">
+          <p className="text-sm font-semibold uppercase tracking-widest text-emerald-400">
+            Gestion Organisateur
+          </p>
+          <h2 className="mt-2 text-3xl font-black text-white">Mes tournois</h2>
+          <p className="mt-2 text-slate-400">
+            {tournaments.length} tournoi{tournaments.length > 1 ? "s" : ""} créé{tournaments.length > 1 ? "s" : ""}
           </p>
         </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700"
-        >
-          {showForm ? "Annuler" : "+ Créer un tournoi"}
-        </button>
       </div>
 
-      {/* Message succès / erreur */}
-      {message && (
-        <div className={`rounded-lg px-4 py-3 text-sm font-medium ${
-          isError
-            ? "bg-red-50 text-red-700 border border-red-200"
-            : "bg-emerald-50 text-emerald-700 border border-emerald-200"
-        }`}>
-          {message}
+      {/* Formulaire création */}
+      <CreateTournamentForm />
+
+      {/* Liste des tournois */}
+      {tournaments.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+          <p className="text-4xl mb-3">🏆</p>
+          <p className="text-base font-semibold text-slate-700">
+            Aucun tournoi créé pour le moment
+          </p>
+          <p className="mt-2 text-sm text-slate-500">
+            Cliquez sur &quot;+ Créer un tournoi&quot; pour commencer.
+          </p>
         </div>
-      )}
-
-      {/* Formulaire */}
-      {showForm && (
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
-          <h3 className="text-lg font-semibold text-slate-900 mb-5">
-            Nouveau tournoi
-          </h3>
-
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Nom du tournoi
-              </label>
-              <input
-                {...register("name", { required: "Le nom est requis", minLength: { value: 5, message: "Au moins 5 caractères" } })}
-                type="text"
-                placeholder="ex: Coupe de Montréal 2026"
-                className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-              />
-              {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Sport</label>
-                <input
-                  {...register("sport", { required: "Le sport est requis" })}
-                  type="text"
-                  placeholder="ex: Football"
-                  className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                />
-                {errors.sport && <p className="mt-1 text-xs text-red-500">{errors.sport.message}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Ville</label>
-                <input
-                  {...register("city", { required: "La ville est requise" })}
-                  type="text"
-                  placeholder="ex: Montréal"
-                  className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                />
-                {errors.city && <p className="mt-1 text-xs text-red-500">{errors.city.message}</p>}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Date de début</label>
-                <input
-                  {...register("startDate", { required: "La date est requise" })}
-                  type="date"
-                  className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                />
-                {errors.startDate && <p className="mt-1 text-xs text-red-500">{errors.startDate.message}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Frais d&apos;inscription{" "}
-                  <span className="text-slate-400 font-normal">(en cents, 0 = gratuit)</span>
-                </label>
-                <input
-                  {...register("entryFee")}
-                  type="number"
-                  min={0}
-                  placeholder="0"
-                  className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2">
+          {tournaments.map((tournament) => (
+            <Link
+              key={tournament.id}
+              href={`/tournaments/${tournament.id}`}
+              className="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-emerald-300 hover:shadow-md"
             >
-              {isSubmitting ? "Création en cours..." : "Créer le tournoi"}
-            </button>
-
-          </form>
+              <div className="flex items-start justify-between">
+                <div>
+                  <span className="inline-block rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700 mb-3">
+                    {tournament.sport}
+                  </span>
+                  <h3 className="text-lg font-bold text-slate-900 group-hover:text-emerald-700 transition">
+                    {tournament.name}
+                  </h3>
+                  <p className="text-sm text-slate-500 mt-1">📍 {tournament.city}</p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    🗓 {new Date(tournament.startDate).toLocaleDateString("fr-CA", {
+                      day: "numeric", month: "long", year: "numeric"
+                    })}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-black text-slate-900">
+                    {tournament._count.teams}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    équipe{tournament._count.teams > 1 ? "s" : ""}
+                  </p>
+                  {tournament.entryFee > 0 && (
+                    <span className="mt-2 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                      💳 {(tournament.entryFee / 100).toFixed(2)} CAD
+                    </span>
+                  )}
+                  {tournament.entryFee === 0 && (
+                    <span className="mt-2 inline-block rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">
+                      Gratuit
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="mt-4 flex items-center justify-end">
+                <span className="text-xs font-semibold text-emerald-600 opacity-0 group-hover:opacity-100 transition">
+                  Voir les détails →
+                </span>
+              </div>
+            </Link>
+          ))}
         </div>
       )}
-
-      {/* Placeholder liste */}
-      <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
-        <p className="text-base font-medium text-slate-700">
-          Aucun tournoi créé pour le moment
-        </p>
-        <p className="mt-2 text-sm text-slate-500">
-          Cliquez sur &quot;+ Créer un tournoi&quot; pour commencer.
-        </p>
-      </div>
-
     </div>
   );
 }
