@@ -57,3 +57,71 @@ export async function createTournament(formData: unknown) {
     return { error: "Une erreur interne est survenue lors de la création." };
   }
 }
+
+export async function updateTournament(id: string, data: any) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Non authentifié");
+
+  // 1. Vérifier que le tournoi appartient bien à l'utilisateur
+  const existingTournament = await prisma.tournament.findUnique({
+    where: { id },
+    select: { organizerId: true }
+  });
+
+  const user = await prisma.user.findUnique({ where: { clerkId: userId } });
+
+  if (!existingTournament || (existingTournament.organizerId !== user?.id && user?.role !== "ADMIN")) {
+    return { error: "Action non autorisée" };
+  }
+
+  // 2. Mise à jour
+  try {
+    await prisma.tournament.update({
+      where: { id },
+      data: {
+        name: data.name,
+        sport: data.sport,
+        city: data.city,
+        entryFee: data.entryFee, 
+      },
+    });
+
+    revalidatePath("/dashboard");
+    revalidatePath(`/tournaments/${id}`);
+    return { success: true };
+  } catch (error) {
+    return { error: "Erreur lors de la mise à jour" };
+  }
+}
+
+/**
+ * Suppression d'un tournoi
+ * Attention : Prisma doit gérer la suppression en cascade des équipes/matchs 
+ * ou il faut les supprimer manuellement.
+ */
+export async function deleteTournament(id: string) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Non authentifié");
+
+  const user = await prisma.user.findUnique({ where: { clerkId: userId } });
+
+  const existingTournament = await prisma.tournament.findUnique({
+    where: { id },
+    select: { organizerId: true }
+  });
+
+  if (!existingTournament || (existingTournament.organizerId !== user?.id && user?.role !== "ADMIN")) {
+    return { error: "Action non autorisée" };
+  }
+
+  try {
+    await prisma.tournament.delete({
+      where: { id },
+    });
+
+    revalidatePath("/dashboard");
+    return { success: true };
+  } catch (error) {
+    return { error: "Impossible de supprimer le tournoi (vérifiez s'il reste des équipes)" };
+  }
+}
