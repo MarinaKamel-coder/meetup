@@ -10,21 +10,16 @@ export default async function HomePage() {
 
   // LOGIQUE DE SYNCHRONISATION ET REDIRECTION
   if (userId && user) {
-    // 1. On cherche l'utilisateur ou on le crée s'il n'existe pas (Upsert)
-    const dbUser = await prisma.user.upsert({
-      where: { clerkId: userId },
-      update: {}, // Ne rien mettre à jour s'il existe déjà
-      create: {
-        clerkId: userId,
-        email: user.emailAddresses[0].emailAddress,
-        fullName: `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "Utilisateur",
-        role: "PLAYER", // On te met PLAYER par défaut pour les tests de démo
-      },
-    });
+    const dbUser = await prisma.user.findUnique({ where: { clerkId: userId } });
 
-    // 2. Redirection basée sur le rôle maintenant que l'user existe forcément
-    if (dbUser.role === "ORGANIZER") redirect("/dashboard");
+    if (!dbUser) {
+      // L'utilisateur est connecté à Clerk mais pas encore dans notre DB Neon
+      redirect("/onboarding");
+    }
+
+    // Redirection normale pour ceux qui ont déjà un rôle
     if (dbUser.role === "ADMIN") redirect("/admin");
+    if (dbUser.role === "ORGANIZER") redirect("/dashboard");
     if (dbUser.role === "PLAYER") redirect("/profile");
   }
 
