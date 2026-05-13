@@ -1,5 +1,4 @@
 // src/app/(player)/teams/[id]/page.tsx
-// src/app/(player)/teams/[id]/page.tsx
 import { notFound } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
@@ -102,7 +101,10 @@ export default async function TeamDetailPage({
 
       {/* Bouton rejoindre */}
       {!isFull && !alreadyRequested && (
-        <JoinButton teamId={team.id} />
+        <JoinButton
+          teamId={team.id}
+          entryFee={team.tournament.entryFee}
+        />
       )}
 
       {alreadyRequested && (
