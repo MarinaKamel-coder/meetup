@@ -9,7 +9,7 @@ export async function POST(req: Request) {
 
   if (!userId || !user) return new NextResponse("Unauthorized", { status: 401 });
 
-  await prisma.user.create({
+  await prisma.user.upsert({
     data: {
       clerkId: userId,
       email: user.emailAddresses[0].emailAddress,

@@ -12,7 +12,6 @@ export async function POST(req: Request) {
   const payload = await req.text();
   const h = await headers();
 
-  // Vérification de la signature Svix
   const wh = new Webhook(secret);
   let evt: { type: string; data: Record<string, unknown> };
 
@@ -25,41 +24,76 @@ export async function POST(req: Request) {
   } catch (err) {
     console.error("Signature Svix invalide:", err);
     return new Response("Signature invalide", { status: 400 });
-  }  
-if (evt.type === "user.created" || evt.type === "user.updated") {
-  const data = evt.data as {
-    id: string;
-    email_addresses: { email_address: string }[];
-    first_name?: string;
-    last_name?: string;
-  };
+  }
 
-  const email = data.email_addresses?.[0]?.email_address ?? "";
-  const fullName = `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim() || "Utilisateur";
+  // ✅ user.created — on récupère le rôle depuis les métadonnées
+  if (evt.type === "user.created") {
+    const data = evt.data as {
+      id: string;
+      email_addresses: { email_address: string }[];
+      first_name?: string;
+      last_name?: string;
+      public_metadata?: { role?: string };
+    };
 
-  await prisma.user.upsert({
-    where: { clerkId: data.id },
-    create: {
-      clerkId: data.id,
-      email,
-      fullName,
-      role: "PLAYER",
-    },
-    update: {
-      email,
-      fullName,
-    },
-  });
+    const email = data.email_addresses?.[0]?.email_address ?? "";
+    const fullName = `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim() || "Utilisateur";
 
-  console.log(`✅ User ${evt.type === "user.created" ? "créé" : "mis à jour"}: ${email}`);
-}
+    // Récupérer le rôle depuis les métadonnées publiques Clerk
+    const role = data.public_metadata?.role === "organizer" ? "ORGANIZER" : "PLAYER";
 
-if (evt.type === "user.deleted") {
-  const data = evt.data as { id: string };
-  await prisma.user.deleteMany({ where: { clerkId: data.id } });
-  console.log(`🗑️ User supprimé: ${data.id}`);
-}
-  
+    await prisma.user.upsert({
+      where: { clerkId: data.id },
+      create: {
+        clerkId: data.id,
+        email,
+        fullName,
+        role,
+      },
+      update: {
+        email,
+        fullName,
+      },
+    });
+
+    console.log(`✅ User créé: ${email} avec rôle ${role}`);
+  }
+
+  // ✅ user.updated
+  if (evt.type === "user.updated") {
+    const data = evt.data as {
+      id: string;
+      email_addresses: { email_address: string }[];
+      first_name?: string;
+      last_name?: string;
+    };
+
+    const email = data.email_addresses?.[0]?.email_address ?? "";
+    const fullName = `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim() || "Utilisateur";
+
+    await prisma.user.upsert({
+      where: { clerkId: data.id },
+      create: {
+        clerkId: data.id,
+        email,
+        fullName,
+        role: "PLAYER",
+      },
+      update: {
+        email,
+        fullName,
+      },
+    });
+
+    console.log(`✅ User mis à jour: ${email}`);
+  }
+
+  // ✅ user.deleted
+  if (evt.type === "user.deleted") {
+    const data = evt.data as { id: string };
+    await prisma.user.deleteMany({ where: { clerkId: data.id } });
+    console.log(`🗑️ User supprimé: ${data.id}`);
+  }
 
   return new Response("ok", { status: 200 });
 }

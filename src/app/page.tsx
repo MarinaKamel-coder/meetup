@@ -165,13 +165,13 @@ export default async function HomePage() {
             </p>
             <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <Link
-                href="/sign-up"
+                href="/sign-up?role=player"
                 className="rounded-xl bg-emerald-500 px-8 py-4 text-base font-bold text-white transition hover:bg-emerald-400"
               >
                 Je suis joueur →
               </Link>
               <Link
-                href="/sign-up"
+                href="/sign-up?role=organizer"
                 className="rounded-xl border border-white/20 px-8 py-4 text-base font-semibold text-white transition hover:bg-white/10"
               >
                 Je suis organisateur →
