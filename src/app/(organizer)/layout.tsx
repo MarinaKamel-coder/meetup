@@ -5,6 +5,7 @@ const organizerLinks = [
     { href: "/dashboard", label: "Dashboard" }, 
     { href: "/tournaments", label: "Tournois" }, 
     { href: "/requests", label: "Demandes" }, 
+    { href: "/matches", label: "Matchs" },
 ]; 
 
 export default function OrganizerLayout({
