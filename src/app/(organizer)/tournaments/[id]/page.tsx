@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import CreateMatchForm from "@/components/CreateMatchForm";
 import CreateTeamForm from "@/components/CreateTeamForm";
+import TournamentActions from "@/components/TournamentActions";
 
 export default async function TournamentDetailPage({
   params,
@@ -64,6 +65,14 @@ export default async function TournamentDetailPage({
           </p>
         </div>
       </div>
+
+      <TournamentActions tournament={{
+        id: tournament.id, 
+        name: tournament.name, 
+        sport: tournament.sport, 
+        city: tournament.city, 
+        entryFee: tournament.entryFee, 
+      }} />
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4">

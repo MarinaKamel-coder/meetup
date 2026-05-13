@@ -5,9 +5,9 @@ const isPublicRoute = createRouteMatcher([
   "/",
   "/sign-in(.*)",
   "/sign-up(.*)",
-  "/onboarding", 
+  "/onboarding",
   "/api/webhooks/(.*)",
-  "/api/user/(.*)", // Permet les routes de gestion utilisateur (ex: set-role)
+  "/api/user/(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

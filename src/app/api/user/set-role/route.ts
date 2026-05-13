@@ -1,3 +1,4 @@
+// src/app/api/user/set-role/route.ts
 import { auth, currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
@@ -10,11 +11,15 @@ export async function POST(req: Request) {
   if (!userId || !user) return new NextResponse("Unauthorized", { status: 401 });
 
   await prisma.user.upsert({
-    data: {
+    where: { clerkId: userId },
+    create: {
       clerkId: userId,
       email: user.emailAddresses[0].emailAddress,
-      fullName: `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim(),
-      role: role, // PLAYER ou ORGANIZER selon le clic du bouton
+      fullName: `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "Utilisateur",
+      role: role,
+    },
+    update: {
+      role: role,
     },
   });
 
