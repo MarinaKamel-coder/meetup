@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import CreateMatchForm from "@/components/CreateMatchForm";
 import CreateTeamForm from "@/components/CreateTeamForm";
 import TournamentActions from "@/components/TournamentActions";
+import TeamActions from "@/components/TeamActions";
 
 export default async function TournamentDetailPage({
   params,
@@ -66,12 +67,13 @@ export default async function TournamentDetailPage({
         </div>
       </div>
 
+      {/* Actions tournoi */}
       <TournamentActions tournament={{
-        id: tournament.id, 
-        name: tournament.name, 
-        sport: tournament.sport, 
-        city: tournament.city, 
-        entryFee: tournament.entryFee, 
+        id: tournament.id,
+        name: tournament.name,
+        sport: tournament.sport,
+        city: tournament.city,
+        entryFee: tournament.entryFee,
       }} />
 
       {/* Stats */}
@@ -96,25 +98,34 @@ export default async function TournamentDetailPage({
         {tournament.teams.length === 0 ? (
           <p className="text-sm text-slate-400 mb-4">Aucune équipe pour l&apos;instant.</p>
         ) : (
-          <div className="grid gap-3 md:grid-cols-2 mb-4">
+          <div className="space-y-3 mb-4">
             {tournament.teams.map((team) => (
-              <div key={team.id} className="rounded-xl border border-slate-200 bg-white p-4 flex items-center justify-between">
-                <p className="font-medium text-slate-900">{team.name}</p>
-                <span className="text-xs text-slate-500">
-                  {team._count.members} / {team.maxCapacity}
-                </span>
+              <div key={team.id} className="rounded-xl border border-slate-200 bg-white p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="font-medium text-slate-900">{team.name}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {team._count.members} / {team.maxCapacity} joueurs
+                    </p>
+                  </div>
+                </div>
+                <TeamActions team={{
+                  id: team.id,
+                  name: team.name,
+                  maxCapacity: team.maxCapacity,
+                  tournamentId: tournament.id,
+                  membersCount: team._count.members,
+                }} />
               </div>
             ))}
           </div>
         )}
-        {/* ✅ Formulaire créer une équipe */}
         <CreateTeamForm tournamentId={tournament.id} />
       </div>
 
       {/* Matchs */}
       <div>
         <h3 className="text-lg font-semibold text-slate-900 mb-4">Matchs</h3>
-
         {matches.length === 0 ? (
           <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
             <p className="text-sm text-slate-500">Aucun match planifié.</p>
@@ -136,8 +147,6 @@ export default async function TournamentDetailPage({
             ))}
           </div>
         )}
-
-        {/* Formulaire créer un match */}
         <div className="mt-6">
           <CreateMatchForm
             tournamentId={tournament.id}
