@@ -1,17 +1,31 @@
 // src/app/page.tsx
 import Link from "next/link";
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server"; // Ajout de currentUser
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 
 export default async function HomePage() {
   const { userId } = await auth();
+  const user = await currentUser();
 
-  if (userId) {
-    const dbUser = await prisma.user.findUnique({ where: { clerkId: userId } });
-    if (dbUser?.role === "ORGANIZER") redirect("/dashboard");
-    if (dbUser?.role === "ADMIN") redirect("/admin");
-    if (dbUser?.role === "PLAYER") redirect("/profile");
+  // LOGIQUE DE SYNCHRONISATION ET REDIRECTION
+  if (userId && user) {
+    // 1. On cherche l'utilisateur ou on le crée s'il n'existe pas (Upsert)
+    const dbUser = await prisma.user.upsert({
+      where: { clerkId: userId },
+      update: {}, // Ne rien mettre à jour s'il existe déjà
+      create: {
+        clerkId: userId,
+        email: user.emailAddresses[0].emailAddress,
+        fullName: `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "Utilisateur",
+        role: "PLAYER", // On te met PLAYER par défaut pour les tests de démo
+      },
+    });
+
+    // 2. Redirection basée sur le rôle maintenant que l'user existe forcément
+    if (dbUser.role === "ORGANIZER") redirect("/dashboard");
+    if (dbUser.role === "ADMIN") redirect("/admin");
+    if (dbUser.role === "PLAYER") redirect("/profile");
   }
 
   return (
