@@ -34,14 +34,14 @@ export default async function MyRequestsPage() {
       <div>
         <h2 className="text-2xl font-bold text-slate-900">Mes demandes</h2>
         <p className="text-sm text-slate-500 mt-1">
-          Suivez l'état de vos demandes d'adhésion.
+          Suivez l&apos;état de vos demandes d&apos;adhésion.
         </p>
       </div>
 
       {requests.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
           <p className="text-base font-medium text-slate-700">
-            Vous n'avez encore envoyé aucune demande.
+            Vous n&apos;avez encore envoyé aucune demande.
           </p>
           <p className="mt-2 text-sm text-slate-500">
             Parcourez les équipes disponibles pour en rejoindre une !
@@ -70,7 +70,7 @@ export default async function MyRequestsPage() {
                     {/* Message */}
                     {request.message && (
                       <p className="mt-2 text-sm text-slate-600 italic border-l-2 border-slate-200 pl-3">
-                        "{request.message}"
+                        {request.message}
                       </p>
                     )}
 

@@ -1,7 +1,7 @@
 "use server"
 
 import { auth } from "@clerk/nextjs/server";
-import  prisma  from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 import { playerProfileSchema } from "@/lib/validations/player";
 import { revalidatePath } from "next/cache";
 
@@ -18,21 +18,33 @@ export async function updatePlayerProfile(data: unknown) {
 
     const { fullName, city, favoriteSport, level, position } = validatedFields.data;
 
-    // 2. Mise à jour atomique (User + Profile)
-    await prisma.user.update({
+    // 2. Upsert User + Profile
+    await prisma.user.upsert({
       where: { clerkId },
-      data: {
-        fullName, // On met à jour le nom dans la table User
+      create: {
+        clerkId,
+        email: "",
+        fullName,
+        role: "PLAYER",
+        playerProfile: {
+          create: {
+            city,
+            favoriteSport,
+            level,
+            position,
+          },
+        },
+      },
+      update: {
+        fullName,
         playerProfile: {
           upsert: {
-            // Si le profil existe, on le met à jour
             update: {
               city,
               favoriteSport,
               level,
               position,
             },
-            // S'il n'existe pas, on le crée
             create: {
               city,
               favoriteSport,
@@ -46,6 +58,7 @@ export async function updatePlayerProfile(data: unknown) {
 
     revalidatePath("/profile");
     return { success: true };
+
   } catch (error) {
     console.error("Erreur profile update:", error);
     return { error: "Une erreur est survenue lors de la mise à jour." };

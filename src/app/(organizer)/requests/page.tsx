@@ -34,7 +34,7 @@ export default async function RequestsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-bold text-slate-900">Demandes d'adhésion</h2>
+        <h2 className="text-2xl font-bold text-slate-900">Demandes d&apos;adhésion</h2>
         <p className="text-sm text-slate-500 mt-1">
           Gérez les demandes des joueurs pour vos équipes.
         </p>
@@ -95,7 +95,7 @@ export default async function RequestsPage() {
                 {/* Message */}
                 {request.message && (
                   <p className="mt-3 text-sm text-slate-600 italic border-l-2 border-slate-200 pl-3">
-                    "{request.message}"
+                    {request.message}
                   </p>
                 )}
 
