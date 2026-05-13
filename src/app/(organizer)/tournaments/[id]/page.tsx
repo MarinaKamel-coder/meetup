@@ -1,15 +1,16 @@
-// src/app/(organizer)/tournaments/[id]/page.tsx
 import { notFound } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import CreateMatchForm from "@/components/CreateMatchForm";
+import CreateTeamForm from "@/components/CreateTeamForm";
 
 export default async function TournamentDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const { userId } = await auth();
   if (!userId) redirect("/sign-in");
 
@@ -17,7 +18,7 @@ export default async function TournamentDetailPage({
   if (!dbUser || dbUser.role !== "ORGANIZER") redirect("/dashboard");
 
   const tournament = await prisma.tournament.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       teams: {
         include: {
@@ -30,7 +31,6 @@ export default async function TournamentDetailPage({
 
   if (!tournament || tournament.organizerId !== dbUser.id) notFound();
 
-  // Matchs du tournoi
   const matches = await prisma.match.findMany({
     where: {
       OR: [
@@ -49,17 +49,20 @@ export default async function TournamentDetailPage({
     <div className="space-y-8">
 
       {/* Header tournoi */}
-      <div>
-        <span className="inline-block rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-          {tournament.sport}
-        </span>
-        <h2 className="mt-3 text-3xl font-bold text-slate-900">{tournament.name}</h2>
-        <p className="text-slate-500 mt-1">📍 {tournament.city}</p>
-        <p className="text-sm text-slate-400 mt-0.5">
-          Début : {new Date(tournament.startDate).toLocaleDateString("fr-CA", {
-            day: "numeric", month: "long", year: "numeric"
-          })}
-        </p>
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-8 shadow-lg">
+        <div className="absolute top-0 right-0 h-40 w-40 translate-x-8 -translate-y-8 rounded-full bg-emerald-500/20 blur-2xl" />
+        <div className="relative z-10">
+          <span className="inline-block rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-400 mb-3">
+            {tournament.sport}
+          </span>
+          <h2 className="text-3xl font-black text-white">{tournament.name}</h2>
+          <p className="text-slate-400 mt-1">📍 {tournament.city}</p>
+          <p className="text-sm text-slate-500 mt-0.5">
+            Début : {new Date(tournament.startDate).toLocaleDateString("fr-CA", {
+              day: "numeric", month: "long", year: "numeric"
+            })}
+          </p>
+        </div>
       </div>
 
       {/* Stats */}
@@ -78,11 +81,13 @@ export default async function TournamentDetailPage({
 
       {/* Équipes */}
       <div>
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">Équipes</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-slate-900">Équipes</h3>
+        </div>
         {tournament.teams.length === 0 ? (
-          <p className="text-sm text-slate-400">Aucune équipe pour l&apos;instant.</p>
+          <p className="text-sm text-slate-400 mb-4">Aucune équipe pour l&apos;instant.</p>
         ) : (
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-3 md:grid-cols-2 mb-4">
             {tournament.teams.map((team) => (
               <div key={team.id} className="rounded-xl border border-slate-200 bg-white p-4 flex items-center justify-between">
                 <p className="font-medium text-slate-900">{team.name}</p>
@@ -93,6 +98,8 @@ export default async function TournamentDetailPage({
             ))}
           </div>
         )}
+        {/* ✅ Formulaire créer une équipe */}
+        <CreateTeamForm tournamentId={tournament.id} />
       </div>
 
       {/* Matchs */}
