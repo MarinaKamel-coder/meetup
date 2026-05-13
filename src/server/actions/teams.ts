@@ -1,7 +1,7 @@
 "use server"
 
 import { auth } from "@clerk/nextjs/server";
-import prisma  from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 import { teamSchema } from "@/lib/validations/teams";
 import { revalidatePath } from "next/cache";
 
@@ -15,7 +15,6 @@ export async function createTeam(data: unknown) {
 
   const { name, tournamentId, maxCapacity } = validatedFields.data;
 
-  // Sécurité : Vérifier que l'user est l'organisateur de CE tournoi
   const tournament = await prisma.tournament.findUnique({
     where: { id: tournamentId },
     select: { organizerId: true }
@@ -32,5 +31,62 @@ export async function createTeam(data: unknown) {
   });
 
   revalidatePath(`/tournaments/${tournamentId}`);
+  return { success: true };
+} 
+
+export async function updateTeam(id: string, data: { name?: string; maxCapacity?: number }) {
+  const { userId } = await auth();
+  if (!userId) return { error: "Non connecté" };
+
+  const dbUser = await prisma.user.findUnique({ where: { clerkId: userId } });
+  if (!dbUser) return { error: "Utilisateur introuvable" };
+
+  const team = await prisma.team.findUnique({
+    where: { id },
+    include: { tournament: { select: { organizerId: true } } },
+  });
+
+  if (!team || (team.tournament.organizerId !== dbUser.id && dbUser.role !== "ADMIN")) {
+    return { error: "Action non autorisée" };
+  }
+
+  await prisma.team.update({
+    where: { id },
+    data: {
+      name: data.name,
+      maxCapacity: data.maxCapacity,
+    },
+  });
+
+  revalidatePath(`/tournaments/${team.tournamentId}`);
+  return { success: true };
+} 
+
+export async function deleteTeam(id: string) {
+  const { userId } = await auth();
+  if (!userId) return { error: "Non connecté" };
+
+  const dbUser = await prisma.user.findUnique({ where: { clerkId: userId } });
+  if (!dbUser) return { error: "Utilisateur introuvable" };
+
+  const team = await prisma.team.findUnique({
+    where: { id },
+    include: {
+      tournament: { select: { organizerId: true } },
+      _count: { select: { members: true } },
+    },
+  });
+
+  if (!team || (team.tournament.organizerId !== dbUser.id && dbUser.role !== "ADMIN")) {
+    return { error: "Action non autorisée" };
+  }
+
+  if (team._count.members > 0) {
+    return { error: "Impossible de supprimer une équipe avec des joueurs inscrits" };
+  }
+
+  await prisma.team.delete({ where: { id } });
+
+  revalidatePath(`/tournaments/${team.tournamentId}`);
   return { success: true };
 }

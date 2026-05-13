@@ -43,6 +43,7 @@ export async function createMatch(data: unknown) {
         teamBId,
         date,
         location,
+        tournamentId: teamA.tournamentId,
       },
     });
 

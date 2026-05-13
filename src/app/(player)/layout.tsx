@@ -4,7 +4,7 @@ import { UserButton } from "@clerk/nextjs";
 
 const playerLinks = [
   { href: "/profile", label: "Mon profil" },
-  { href: "/tournaments", label: "Tournois" },
+  { href: "/discover", label: "Tournois" },
   { href: "/teams", label: "Équipes" },
   { href: "/my-requests", label: "Mes demandes" },
   { href: "/matches", label: "Matchs" },
