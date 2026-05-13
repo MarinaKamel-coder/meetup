@@ -11,13 +11,10 @@ export default async function DashboardPage() {
   const dbUser = await prisma.user.findUnique({ where: { clerkId: userId } });
   if (!dbUser || dbUser.role !== "ORGANIZER") redirect("/");
 
-  // Stats réelles depuis Prisma
   const [tournamentsCount, teamsCount, pendingRequestsCount, recentTournaments] =
     await Promise.all([
       prisma.tournament.count({ where: { organizerId: dbUser.id } }),
-      prisma.team.count({
-        where: { tournament: { organizerId: dbUser.id } },
-      }),
+      prisma.team.count({ where: { tournament: { organizerId: dbUser.id } } }),
       prisma.joinRequest.count({
         where: {
           status: "PENDING",
@@ -34,97 +31,116 @@ export default async function DashboardPage() {
 
   const stats = [
     {
-      label: "Tournois créés",
-      value: tournamentsCount.toString(),
-      description: "Compétitions actuellement gérées",
-    },
-    {
-      label: "Équipes inscrites",
-      value: teamsCount.toString(),
-      description: "Équipes actuellement enregistrées",
-    },
-    {
-      label: "Demandes en attente",
-      value: pendingRequestsCount.toString(),
-      description: "Candidatures à traiter",
-    },
-  ];
-
-  const quickActions = [
-    {
-      title: "Créer un tournoi",
-      description: "Lancez une nouvelle compétition et ouvrez les inscriptions",
+      label: "Tournois",
+      value: tournamentsCount,
+      emoji: "🏆",
+      color: "from-emerald-500 to-emerald-700",
+      shadow: "shadow-emerald-500/20",
       href: "/tournaments",
     },
     {
-      title: "Gérer les demandes",
-      description: "Consultez et validez les demandes d'adhésion des joueurs",
+      label: "Équipes",
+      value: teamsCount,
+      emoji: "👥",
+      color: "from-blue-500 to-blue-700",
+      shadow: "shadow-blue-500/20",
+      href: "/tournaments",
+    },
+    {
+      label: "En attente",
+      value: pendingRequestsCount,
+      emoji: "⏳",
+      color: "from-amber-500 to-amber-700",
+      shadow: "shadow-amber-500/20",
       href: "/requests",
     },
   ];
 
   return (
-    <section className="space-y-8">
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-emerald-600">
+    <div className="space-y-8">
+
+      {/* Header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-8 shadow-lg">
+        <div className="absolute top-0 right-0 h-48 w-48 translate-x-12 -translate-y-12 rounded-full bg-emerald-500/20 blur-3xl" />
+        <div className="absolute bottom-0 left-0 h-32 w-32 -translate-x-8 translate-y-8 rounded-full bg-blue-500/10 blur-2xl" />
+        <div className="relative z-10">
+          <p className="text-sm font-semibold uppercase tracking-widest text-emerald-400">
             Dashboard
           </p>
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+          <h2 className="mt-2 text-3xl font-black text-white">
             Bonjour, {dbUser.fullName.split(" ")[0]} 👋
           </h2>
-          <p className="mt-2 max-w-2xl text-sm text-slate-600 md:text-base">
-            Suivez vos tournois, vos équipes et les demandes des joueurs.
+          <p className="mt-2 text-slate-400 max-w-xl">
+            Gérez vos tournois, équipes et demandes depuis votre espace organisateur.
           </p>
         </div>
-
-        <Link
-          href="/tournaments"
-          className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-        >
-          Gérer mes tournois
-        </Link>
       </div>
 
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
-        {stats.map((stat) => (
-          <div
-            key={stat.label}
-            className="rounded-2xl border border-slate-200 bg-slate-50 p-5 shadow-sm transition hover:shadow-md"
-          >
-            <p className="text-sm font-medium text-slate-500">{stat.label}</p>
-            <p className="mt-3 text-4xl font-bold tracking-tight text-slate-900">
-              {stat.value}
-            </p>
-            <p className="mt-2 text-sm text-slate-600">{stat.description}</p>
+      {/* Alerte demandes en attente */}
+      {pendingRequestsCount > 0 && (
+        <Link href="/requests" className="block">
+          <div className="rounded-2xl border border-amber-300/50 bg-gradient-to-r from-amber-500/10 to-amber-600/5 p-5 flex items-center justify-between hover:from-amber-500/20 transition">
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-xl bg-amber-500/20 flex items-center justify-center text-2xl">
+                ⏳
+              </div>
+              <div>
+                <p className="font-bold text-slate-900">
+                  {pendingRequestsCount} demande{pendingRequestsCount > 1 ? "s" : ""} en attente
+                </p>
+                <p className="text-sm text-slate-500">
+                  Cliquez pour les accepter ou refuser
+                </p>
+              </div>
+            </div>
+            <span className="rounded-xl bg-amber-500 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-amber-500/20 transition hover:bg-amber-400">
+              Voir →
+            </span>
           </div>
+        </Link>
+      )}
+
+      {/* Stats */}
+      <div className="grid gap-5 md:grid-cols-3">
+        {stats.map((stat) => (
+          <Link key={stat.label} href={stat.href}>
+            <div className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.color} p-6 shadow-lg ${stat.shadow} transition hover:scale-[1.02]`}>
+              <div className="absolute top-0 right-0 h-24 w-24 translate-x-6 -translate-y-6 rounded-full bg-white/10 blur-xl" />
+              <div className="relative z-10">
+                <p className="text-3xl mb-2">{stat.emoji}</p>
+                <p className="text-4xl font-black text-white">{stat.value}</p>
+                <p className="mt-1 text-sm font-semibold text-white/80">{stat.label}</p>
+              </div>
+            </div>
+          </Link>
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.4fr_0.8fr]">
+      <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+
         {/* Tournois récents */}
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-semibold text-slate-900">
-              Mes tournois récents
+            <h3 className="text-lg font-bold text-slate-900">
+              Tournois récents
             </h3>
             <Link
               href="/tournaments"
-              className="text-sm font-medium text-emerald-600 hover:text-emerald-500"
+              className="text-sm font-semibold text-emerald-600 hover:text-emerald-500 transition"
             >
               Voir tout →
             </Link>
           </div>
 
           {recentTournaments.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
-              <p className="text-base font-medium text-slate-700">
-                Aucun tournoi créé pour le moment
+            <div className="rounded-xl border border-dashed border-slate-200 p-8 text-center">
+              <p className="text-3xl mb-3">🏟️</p>
+              <p className="text-sm font-semibold text-slate-700">
+                Aucun tournoi créé
               </p>
               <Link
                 href="/tournaments"
-                className="mt-5 inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-500"
+                className="mt-4 inline-block rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-500"
               >
                 Créer mon premier tournoi
               </Link>
@@ -134,15 +150,15 @@ export default async function DashboardPage() {
               {recentTournaments.map((tournament) => (
                 <div
                   key={tournament.id}
-                  className="flex items-center justify-between rounded-xl border border-slate-200 p-4"
+                  className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-4 hover:border-emerald-200 hover:bg-emerald-50/50 transition"
                 >
                   <div>
-                    <p className="font-semibold text-slate-900">{tournament.name}</p>
+                    <p className="font-bold text-slate-900">{tournament.name}</p>
                     <p className="text-xs text-slate-500 mt-0.5">
                       {tournament.sport} • {tournament.city}
                     </p>
                   </div>
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                  <span className="rounded-full bg-white border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm">
                     {tournament._count.teams} équipe{tournament._count.teams > 1 ? "s" : ""}
                   </span>
                 </div>
@@ -152,43 +168,49 @@ export default async function DashboardPage() {
         </div>
 
         {/* Actions rapides */}
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-slate-900">
-              Actions rapides
-            </h3>
-            <div className="mt-4 space-y-4">
-              {quickActions.map((action) => (
-                <Link
-                  key={action.title}
-                  href={action.href}
-                  className="block rounded-xl border border-slate-200 p-4 transition hover:border-emerald-300 hover:bg-emerald-50"
-                >
-                  <p className="font-semibold text-slate-900">{action.title}</p>
-                  <p className="mt-1 text-sm text-slate-600">{action.description}</p>
-                </Link>
-              ))}
-            </div>
-          </div>
+        <div className="space-y-4">
+          <h3 className="text-lg font-bold text-slate-900">Actions rapides</h3>
 
-          {pendingRequestsCount > 0 && (
+          {[
+            {
+              href: "/tournaments",
+              emoji: "🏆",
+              title: "Créer un tournoi",
+              description: "Lancez une nouvelle compétition",
+              color: "hover:border-emerald-300 hover:bg-emerald-50",
+            },
+            {
+              href: "/requests",
+              emoji: "📋",
+              title: "Gérer les demandes",
+              description: "Validez les candidatures",
+              color: "hover:border-blue-300 hover:bg-blue-50",
+            },
+            {
+              href: "/tournaments",
+              emoji: "👥",
+              title: "Gérer les équipes",
+              description: "Suivez vos équipes",
+              color: "hover:border-purple-300 hover:bg-purple-50",
+            },
+          ].map((action) => (
             <Link
-              href="/requests"
-              className="block rounded-2xl border border-amber-200 bg-amber-50 p-6 shadow-sm transition hover:bg-amber-100"
+              key={action.title}
+              href={action.href}
+              className={`flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 transition ${action.color}`}
             >
-              <p className="text-sm uppercase tracking-widest text-amber-600 font-medium">
-                Action requise
-              </p>
-              <p className="mt-2 text-xl font-bold text-slate-900">
-                {pendingRequestsCount} demande{pendingRequestsCount > 1 ? "s" : ""} en attente
-              </p>
-              <p className="mt-1 text-sm text-slate-600">
-                Cliquez pour les traiter →
-              </p>
+              <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center text-xl shrink-0">
+                {action.emoji}
+              </div>
+              <div>
+                <p className="font-bold text-slate-900">{action.title}</p>
+                <p className="text-xs text-slate-500">{action.description}</p>
+              </div>
+              <span className="ml-auto text-slate-400">→</span>
             </Link>
-          )}
+          ))}
         </div>
       </div>
-    </section>
+    </div>
   );
 }
