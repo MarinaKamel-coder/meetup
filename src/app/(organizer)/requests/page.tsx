@@ -30,8 +30,8 @@ export default async function RequestsPage() {
         { paymentStatus: "PAID" },
         { paymentStatus: "NOT_REQUIRED" },
         { paymentStatus: "PENDING" }
-      ]
-    },3h30
+      ],
+    },
     include: {
       player: {
         include: { playerProfile: true },
