@@ -6,32 +6,44 @@ export async function GET(
   req: Request, 
   { params }: { params: { teamId?: string } } 
 ) {
-  const { userId } = await auth();
-  if (!userId) return new NextResponse("Unauthorized", { status: 401 });
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return new NextResponse("Non autorisé", { status: 401 });
+    }
 
-  // --- RÉCUPÉRATION DU ID ---
-  const { searchParams } = new URL(req.url);
-  const queryTeamId = searchParams.get("teamId");
-  
-  // On prend teamId depuis params (si route dynamique) ou searchParams
-  const finalTeamId = params.teamId || queryTeamId;
+    // 1. Extraction propre des paramètres
+    const { searchParams } = new URL(req.url);
+    const queryTeamId = searchParams.get("teamId");
+    
+    // On récupère le teamId (soit de l'URL dynamique, soit de la query string)
+    const finalTeamId = params?.teamId || queryTeamId;
 
-  const requests = await prisma.joinRequest.findMany({
-    where: { 
-      // Si on a un teamId, on filtre par équipe, 
-      // sinon on montre les demandes du joueur connecté
-      ...(finalTeamId 
-        ? { teamId: finalTeamId } 
-        : { player: { clerkId: userId } }
-      ),
-      paymentStatus: { in: ["PAID", "PENDING", "NOT_REQUIRED"] }
-    },
-    include: {
-      player: true,
-      team: { select: { name: true } } 
-    },
-    orderBy: { createdAt: 'desc' }
-  });
+    // 2. Requête Prisma optimisée
+    const requests = await prisma.joinRequest.findMany({
+      where: { 
+        ...(finalTeamId 
+          ? { teamId: finalTeamId } 
+          : { player: { clerkId: userId } }
+        ),
+        // On ne montre que les demandes pertinentes
+        paymentStatus: { in: ["PAID", "PENDING", "NOT_REQUIRED"] }
+      },
+      include: {
+        player: true,
+        team: { 
+          select: { name: true } 
+        } 
+      },
+      orderBy: { 
+        createdAt: 'desc' 
+      }
+    });
 
-  return NextResponse.json(requests);
+    return NextResponse.json(requests);
+
+  } catch (error) {
+    console.error("Erreur API JoinRequests:", error);
+    return new NextResponse("Erreur serveur interne", { status: 500 });
+  }
 }
