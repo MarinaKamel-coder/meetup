@@ -72,10 +72,10 @@ export default function JoinButton({
           <CreditCard className="w-5 h-5 text-amber-600 mt-0.5" />
           <div>
             <p className="text-xs font-bold text-amber-900 uppercase tracking-wider">
-              Frais d'inscription : {(entryFee / 100).toFixed(2)} CAD
+              Frais d&apos;inscription : {(entryFee / 100).toFixed(2)} CAD
             </p>
             <p className="text-[11px] text-amber-700 leading-relaxed">
-              Paiement sécurisé via Stripe. Votre place ne sera validée qu'après confirmation du paiement.
+              Paiement sécurisé via Stripe. Votre place ne sera validée qu&apos;après confirmation du paiement.
             </p>
           </div>
         </div>
@@ -97,7 +97,7 @@ export default function JoinButton({
         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-xl space-y-4">
           <div className="space-y-2">
             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
-              Message pour l'organisateur
+              Message pour l&apos;organisateur
             </label>
             <textarea
               value={message}

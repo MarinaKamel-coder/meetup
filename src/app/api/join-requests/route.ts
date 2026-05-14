@@ -3,37 +3,36 @@ import prisma from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
 
 export async function GET(
-  req: NextRequest, // Utilisation de NextRequest au lieu de Request
-  context: { params: Promise<{ teamId?: string }> } 
+  req: NextRequest,
+  context: { params: Promise<{ teamId?: string }> }
 ) {
   try {
     const { userId } = await auth();
     if (!userId) return new NextResponse("Unauthorized", { status: 401 });
 
-    // On attend les paramètres de manière asynchrone
     const params = await context.params;
-    
+
     const { searchParams } = new URL(req.url);
     const queryTeamId = searchParams.get("teamId");
-    
+
     const finalTeamId = params.teamId || queryTeamId;
 
     const requests = await prisma.joinRequest.findMany({
-      where: { 
-        ...(finalTeamId 
-          ? { teamId: finalTeamId } 
+      where: {
+        ...(finalTeamId
+          ? { teamId: finalTeamId }
           : { player: { clerkId: userId } }
         ),
         paymentStatus: { in: ["PAID", "PENDING", "NOT_REQUIRED"] }
       },
       include: {
         player: true,
-        team: { 
-          select: { name: true } 
-        } 
+        team: {
+          select: { name: true }
+        }
       },
-      orderBy: { 
-        createdAt: 'desc' 
+      orderBy: {
+        createdAt: "desc"
       }
     });
 
