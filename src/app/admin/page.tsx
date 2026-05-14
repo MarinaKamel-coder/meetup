@@ -189,7 +189,6 @@ export default async function AdminPage() {
                     <DeleteButton 
                       action={deleteTournament} 
                       id={tournament.id} 
-                      name="tournamentId" 
                       label={tournament.name} 
                     />
                   </div>
@@ -218,7 +217,6 @@ export default async function AdminPage() {
                           <DeleteButton 
                             action={deleteTeam} 
                             id={team.id} 
-                            name="teamId" 
                             label={team.name} 
                           />
                         </div>

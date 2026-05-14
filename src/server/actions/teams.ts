@@ -66,13 +66,12 @@ export async function updateTeam(id: string, data: { name?: string; maxCapacity?
   return { success: true };
 } 
 
-// --- SUPPRESSION (Version compatible Admin FormData) ---
-export async function deleteTeam(formData: FormData) {
+// --- SUPPRESSION  ---
+export async function deleteTeam(teamId: string) {
   const { userId } = await auth();
   if (!userId) return { error: "Non connecté" };
 
-  // On extrait l'ID depuis le FormData envoyé par le DeleteButton
-  const id = formData.get("teamId") as string;
+  const id = teamId;
 
   const dbUser = await prisma.user.findUnique({ where: { clerkId: userId } });
   if (!dbUser) return { error: "Utilisateur introuvable" };
@@ -89,7 +88,6 @@ export async function deleteTeam(formData: FormData) {
     return { error: "Action non autorisée" };
   }
 
-  // Optionnel : Tu peux garder cette sécurité ou la retirer pour l'admin
   if (team._count.members > 0 && dbUser.role !== "ADMIN") {
     return { error: "Impossible de supprimer une équipe avec des joueurs inscrits" };
   }

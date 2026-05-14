@@ -76,11 +76,11 @@ export async function updateTournament(id: string, data: any) {
 /**
  * Suppression d'un tournoi
  */
-export async function deleteTournament(formData: FormData) {
+export async function deleteTournament(tournamentId: string) {
   const { userId } = await auth();
   if (!userId) return { error: "Non authentifié" };
 
-  const id = formData.get("tournamentId") as string;
+  const id = tournamentId;
   const user = await prisma.user.findUnique({ where: { clerkId: userId } });
 
   const existingTournament = await prisma.tournament.findUnique({

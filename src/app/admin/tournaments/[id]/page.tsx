@@ -94,7 +94,6 @@ export default async function AdminTournamentDetailsPage({ params }: Props) {
                <DeleteButton 
                 action={deleteTournament} 
                 id={tournament.id} 
-                name="tournamentId" 
                 label={`le tournoi "${tournament.name}"`} 
               />
             </div>
@@ -172,7 +171,6 @@ export default async function AdminTournamentDetailsPage({ params }: Props) {
                     <DeleteButton 
                       action={deleteTeam} 
                       id={team.id} 
-                      name="teamId" 
                       label={`l'équipe "${team.name}"`} 
                     />
                   </div>
