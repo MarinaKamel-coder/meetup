@@ -1,17 +1,19 @@
 import { auth } from "@clerk/nextjs/server";
-import prisma  from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(req: Request, { params }: { params: { teamId: string } }) {
   const { userId } = await auth();
   if (!userId) return new NextResponse("Unauthorized", { status: 401 });
 
-  const dbUser = await prisma.user.findUnique({ where: { clerkId: userId } });
-
+  // 1. On récupère toutes les demandes pour cette équipe
   const requests = await prisma.joinRequest.findMany({
-    where: { playerId: dbUser?.id },
+    where: { 
+      teamId: params.teamId,
+      paymentStatus: "PAID" 
+    },
     include: {
-      team: { include: { tournament: true } }
+      player: true // Pour voir qui veut rejoindre
     },
     orderBy: { createdAt: 'desc' }
   });
