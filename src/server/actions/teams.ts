@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { teamSchema } from "@/lib/validations/teams";
 import { revalidatePath } from "next/cache";
 
+// --- CRÉATION ---
 export async function createTeam(data: unknown) {
   const { userId } = await auth();
   const validatedFields = teamSchema.safeParse(data);
@@ -22,7 +23,7 @@ export async function createTeam(data: unknown) {
 
   const dbUser = await prisma.user.findUnique({ where: { clerkId: userId } });
 
-  if (tournament?.organizerId !== dbUser?.id) {
+  if (tournament?.organizerId !== dbUser?.id && dbUser?.role !== "ADMIN") {
     return { error: "Action non autorisée" };
   }
 
@@ -31,9 +32,11 @@ export async function createTeam(data: unknown) {
   });
 
   revalidatePath(`/tournaments/${tournamentId}`);
+  revalidatePath("/admin"); 
   return { success: true };
 } 
 
+// --- MISE À JOUR ---
 export async function updateTeam(id: string, data: { name?: string; maxCapacity?: number }) {
   const { userId } = await auth();
   if (!userId) return { error: "Non connecté" };
@@ -59,12 +62,16 @@ export async function updateTeam(id: string, data: { name?: string; maxCapacity?
   });
 
   revalidatePath(`/tournaments/${team.tournamentId}`);
+  revalidatePath("/admin");
   return { success: true };
 } 
 
-export async function deleteTeam(id: string) {
+// --- SUPPRESSION  ---
+export async function deleteTeam(teamId: string) {
   const { userId } = await auth();
   if (!userId) return { error: "Non connecté" };
+
+  const id = teamId;
 
   const dbUser = await prisma.user.findUnique({ where: { clerkId: userId } });
   if (!dbUser) return { error: "Utilisateur introuvable" };
@@ -81,12 +88,13 @@ export async function deleteTeam(id: string) {
     return { error: "Action non autorisée" };
   }
 
-  if (team._count.members > 0) {
+  if (team._count.members > 0 && dbUser.role !== "ADMIN") {
     return { error: "Impossible de supprimer une équipe avec des joueurs inscrits" };
   }
 
   await prisma.team.delete({ where: { id } });
 
   revalidatePath(`/tournaments/${team.tournamentId}`);
+  revalidatePath("/admin"); // Crucial pour mettre à jour les compteurs de l'admin
   return { success: true };
 }

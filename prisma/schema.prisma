@@ -34,6 +34,7 @@ enum PaymentStatus {
   NOT_REQUIRED  // tournoi gratuit
   PENDING       // paiement Stripe en cours / non confirme
   PAID          // confirme par webhook Stripe
+  FAILED        // <--- AJOUTÉ : paiement échoué ou session expirée
 }
 
 model User {
@@ -128,6 +129,6 @@ model Match {
   tournamentId String
   tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   
-  teamA     Team     @relation("TeamA", fields: [teamAId], references: [id])
-  teamB     Team     @relation("TeamB", fields: [teamBId], references: [id])
+  teamA     Team     @relation("TeamA", fields: [teamAId], references: [id], onDelete: Cascade)
+  teamB     Team     @relation("TeamB", fields: [teamBId], references: [id], onDelete: Cascade)
 }

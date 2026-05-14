@@ -1,8 +1,16 @@
-// src/app/(organizer)/requests/page.tsx
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import RequestActions from "@/components/RequestActions";
+import { 
+  CheckCircle2, 
+  Clock, 
+  MapPin, 
+  Trophy, 
+  User, 
+  ShieldCheck, 
+  AlertCircle 
+} from "lucide-react";
 
 export default async function RequestsPage() {
   const { userId } = await auth();
@@ -16,13 +24,23 @@ export default async function RequestsPage() {
       team: {
         tournament: { organizerId: dbUser.id },
       },
+      // --- FILTRE DE SÉCURITÉ ---
+      // On masque les "PENDING" de Stripe pour éviter que l'organisateur accepte un impayé.
+      OR: [
+        { paymentStatus: "PAID" },
+        { paymentStatus: "NOT_REQUIRED" }
+      ]
     },
     include: {
       player: {
         include: { playerProfile: true },
       },
       team: {
-        include: { tournament: { select: { name: true } } },
+        include: { 
+          tournament: { 
+            select: { name: true, entryFee: true } 
+          } 
+        },
       },
     },
     orderBy: { createdAt: "desc" },
@@ -32,113 +50,116 @@ export default async function RequestsPage() {
   const treated = requests.filter((r) => r.status !== "PENDING");
 
   return (
-    <div className="space-y-8">
-
-      {/* Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-8 shadow-lg">
-        <div className="absolute top-0 right-0 h-40 w-40 translate-x-8 -translate-y-8 rounded-full bg-emerald-500/20 blur-2xl" />
-        <div className="relative z-10 flex items-start justify-between">
+    <div className="max-w-6xl mx-auto space-y-8">
+      {/* --- HEADER --- */}
+      <div className="relative overflow-hidden rounded-[2.5rem] bg-slate-900 p-10 shadow-2xl">
+        <div className="absolute top-0 right-0 h-64 w-64 translate-x-16 -translate-y-16 rounded-full bg-emerald-500/10 blur-3xl" />
+        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-widest text-emerald-400">
-              Gestion Organisateur
-            </p>
-            <h2 className="mt-2 text-3xl font-black text-white">
+            <div className="flex items-center gap-2 text-emerald-400 mb-2">
+              <ShieldCheck className="w-5 h-5" />
+              <span className="text-xs font-black uppercase tracking-widest">Console Organisateur</span>
+            </div>
+            <h2 className="text-4xl font-black text-white italic tracking-tight">
               Demandes d&apos;adhésion
             </h2>
-            <p className="mt-2 text-slate-400">
-              Acceptez ou refusez les candidatures des joueurs.
+            <p className="mt-2 text-slate-400 font-medium max-w-md">
+              Gérez les candidatures entrantes. Seules les demandes avec paiement confirmé sont affichées.
             </p>
           </div>
+          
           {pending.length > 0 && (
-            <div className="rounded-2xl bg-amber-500/20 border border-amber-500/30 px-5 py-3 text-center">
-              <p className="text-3xl font-black text-amber-400">{pending.length}</p>
-              <p className="text-xs font-medium text-amber-300">en attente</p>
+            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6 text-center min-w-[140px]">
+              <p className="text-4xl font-black text-emerald-400">{pending.length}</p>
+              <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">À traiter</p>
             </div>
           )}
         </div>
       </div>
 
-      {/* En attente */}
-      <div>
-        <h3 className="text-sm font-semibold uppercase tracking-widest text-slate-500 mb-4">
-          En attente{" "}
-          <span className="ml-2 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
-            {pending.length}
-          </span>
-        </h3>
+      {/* --- SECTION : EN ATTENTE --- */}
+      <div className="space-y-6">
+        <div className="flex items-center gap-3 px-2">
+          <Clock className="w-5 h-5 text-amber-500" />
+          <h3 className="text-sm font-black uppercase tracking-widest text-slate-500">
+            Demandes prioritaires
+          </h3>
+        </div>
 
         {pending.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
-            <p className="text-4xl mb-3">🎉</p>
-            <p className="text-sm font-semibold text-slate-700">
-              Toutes les demandes ont été traitées !
-            </p>
+          <div className="rounded-[2.5rem] border-2 border-dashed border-slate-200 bg-slate-50/50 p-20 text-center">
+            <div className="bg-white w-16 h-16 rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+            </div>
+            <p className="text-lg font-black text-slate-900 italic">Tout est à jour !</p>
+            <p className="text-sm text-slate-400 font-medium">Aucune nouvelle demande à traiter pour le moment.</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="grid gap-4">
             {pending.map((request) => (
               <div
                 key={request.id}
-                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition"
+                className="group relative rounded-[2rem] border border-slate-100 bg-white p-6 shadow-sm hover:shadow-xl hover:border-emerald-100 transition-all duration-300"
               >
-                <div className="flex items-start justify-between gap-4">
-                  {/* Joueur */}
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-lg font-black text-white shadow-lg shadow-emerald-500/20">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                  {/* Profil Joueur */}
+                  <div className="flex items-center gap-5">
+                    <div className="h-16 w-16 rounded-2xl bg-slate-900 flex items-center justify-center text-xl font-black text-white shadow-lg group-hover:scale-105 transition-transform">
                       {request.player.fullName.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <p className="font-bold text-slate-900 text-lg">
-                        {request.player.fullName}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        {request.player.playerProfile?.city && (
-                          <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
-                            📍 {request.player.playerProfile.city}
+                      <div className="flex items-center gap-2">
+                        <p className="font-black text-slate-900 text-xl italic uppercase tracking-tight">
+                          {request.player.fullName}
+                        </p>
+                        {request.paymentStatus === "PAID" && (
+                          <span className="bg-emerald-50 text-emerald-600 text-[9px] font-black px-2 py-0.5 rounded-full border border-emerald-100 uppercase">
+                            Payé
                           </span>
                         )}
-                        {request.player.playerProfile?.favoriteSport && (
-                          <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
-                            🏅 {request.player.playerProfile.favoriteSport}
-                          </span>
-                        )}
-                        {request.player.playerProfile?.level && (
-                          <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
-                            {request.player.playerProfile.level === "BEGINNER" ? "🌱 Débutant" :
-                             request.player.playerProfile.level === "INTERMEDIATE" ? "⚡ Intermédiaire" :
-                             "🔥 Avancé"}
-                          </span>
-                        )}
+                      </div>
+                      
+                      <div className="flex flex-wrap items-center gap-3 mt-1.5">
+                        <span className="flex items-center gap-1 text-[10px] font-bold text-slate-400 uppercase">
+                          <MapPin className="w-3 h-3 text-emerald-500" /> 
+                          {request.player.playerProfile?.city || "Non spécifié"}
+                        </span>
+                        <span className="text-slate-200">•</span>
+                        <span className="flex items-center gap-1 text-[10px] font-bold text-slate-400 uppercase">
+                          <Trophy className="w-3 h-3 text-emerald-500" /> 
+                          {request.player.playerProfile?.level || "Débutant"}
+                        </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Actions */}
-                  <RequestActions requestId={request.id} />
+                  {/* Actions (Client Component) */}
+                  <div className="flex items-center gap-3 self-end lg:self-center bg-slate-50 p-2 rounded-2xl">
+                    <RequestActions requestId={request.id} />
+                  </div>
                 </div>
 
-                {/* Équipe + message */}
-                <div className="mt-4 pl-16">
-                  <div className="flex gap-2 flex-wrap">
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                      🏅 {request.team.name}
-                    </span>
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-                      🏆 {request.team.tournament.name}
-                    </span>
+                {/* Détails de la demande */}
+                <div className="mt-6 pt-6 border-t border-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-2">
+                    <div className="px-3 py-1 rounded-full bg-slate-100 text-[10px] font-black text-slate-600 uppercase">
+                      Équipe: {request.team.name}
+                    </div>
+                    <div className="px-3 py-1 rounded-full bg-emerald-100 text-[10px] font-black text-emerald-700 uppercase">
+                      Tournoi: {request.team.tournament.name}
+                    </div>
                   </div>
 
                   {request.message && (
-                    <p className="mt-3 text-sm text-slate-600 italic border-l-2 border-emerald-300 pl-3">
-                      &quot;{request.message}&quot;
-                    </p>
+                    <div className="flex-1 max-w-md bg-emerald-50/50 px-4 py-2 rounded-xl border-l-4 border-emerald-400">
+                      <p className="text-xs text-emerald-800 italic font-medium">
+                        &quot;{request.message}&quot;
+                      </p>
+                    </div>
                   )}
 
-                  <p className="mt-2 text-xs text-slate-400">
-                    Reçue le{" "}
-                    {new Date(request.createdAt).toLocaleDateString("fr-CA", {
-                      day: "numeric", month: "long", year: "numeric",
-                    })}
+                  <p className="text-[10px] font-bold text-slate-300 uppercase">
+                    Reçue le {new Date(request.createdAt).toLocaleDateString("fr-CA")}
                   </p>
                 </div>
               </div>
@@ -147,47 +168,44 @@ export default async function RequestsPage() {
         )}
       </div>
 
-      {/* Traitées */}
+      {/* --- SECTION : TRAITÉES --- */}
       {treated.length > 0 && (
-        <div>
-          <h3 className="text-sm font-semibold uppercase tracking-widest text-slate-500 mb-4">
-            Traitées{" "}
-            <span className="ml-2 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
-              {treated.length}
-            </span>
+        <div className="pt-8 border-t border-slate-100">
+          <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-6 px-2">
+            Historique récent
           </h3>
-          <div className="space-y-3">
+          <div className="grid sm:grid-cols-2 gap-4">
             {treated.map((request) => (
               <div
                 key={request.id}
-                className={`rounded-2xl border p-4 flex items-center justify-between ${
+                className={`rounded-3xl border p-5 flex items-center justify-between transition-all ${
                   request.status === "ACCEPTED"
-                    ? "border-emerald-200 bg-emerald-50/50"
-                    : "border-slate-200 bg-slate-50"
+                    ? "border-emerald-100 bg-white"
+                    : "border-slate-100 bg-slate-50 opacity-75"
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <div className={`h-9 w-9 rounded-xl flex items-center justify-center text-sm font-black text-white ${
-                    request.status === "ACCEPTED"
-                      ? "bg-emerald-500"
-                      : "bg-slate-400"
+                <div className="flex items-center gap-4">
+                  <div className={`h-10 w-10 rounded-xl flex items-center justify-center text-sm font-black text-white ${
+                    request.status === "ACCEPTED" ? "bg-emerald-500 shadow-lg shadow-emerald-100" : "bg-slate-400"
                   }`}>
                     {request.player.fullName.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-slate-800">
+                    <p className="text-sm font-black text-slate-900 uppercase italic">
                       {request.player.fullName}
                     </p>
-                    <p className="text-xs text-slate-400">{request.team.name}</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                      {request.team.name}
+                    </p>
                   </div>
                 </div>
-                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                  request.status === "ACCEPTED"
-                    ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
-                    : "bg-red-100 text-red-700 border border-red-200"
+                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                  request.status === "ACCEPTED" 
+                    ? "bg-emerald-50 text-emerald-600" 
+                    : "bg-slate-200 text-slate-500"
                 }`}>
-                  {request.status === "ACCEPTED" ? "✅ Acceptée" : "❌ Refusée"}
-                </span>
+                  {request.status === "ACCEPTED" ? "Acceptée" : "Refusée"}
+                </div>
               </div>
             ))}
           </div>

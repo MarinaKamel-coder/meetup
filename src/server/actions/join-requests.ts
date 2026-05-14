@@ -32,34 +32,59 @@ export async function acceptJoinRequest(requestId: string) {
   if (!userId) return { error: "Non connecté" };
 
   const dbUser = await prisma.user.findUnique({ where: { clerkId: userId } });
-  if (!dbUser || dbUser.role !== "ORGANIZER") return { error: "Interdit" };
+  // On autorise l'ORGANIZER et l'ADMIN à accepter
+  if (!dbUser || (dbUser.role !== "ORGANIZER" && dbUser.role !== "ADMIN")) {
+    return { error: "Interdit" };
+  }
 
-  return await prisma.$transaction(async (tx) => {
-    const request = await tx.joinRequest.findUnique({
-      where: { id: requestId },
-      include: { team: { include: { _count: { select: { members: true } } } } }
+  try {
+    return await prisma.$transaction(async (tx) => {
+      const request = await tx.joinRequest.findUnique({
+        where: { id: requestId },
+        include: { 
+          team: { 
+            include: { 
+              tournament: true, // Pour vérifier si un frais est requis
+              _count: { select: { members: true } } 
+            } 
+          } 
+        }
+      });
+
+      if (!request || request.status !== "PENDING") {
+        throw new Error("Demande invalide");
+      }
+
+      // --- SÉCURITÉ CRITIQUE : LE VERROU DE PAIEMENT ---
+      // Si le tournoi est payant (entryFee > 0) ET que le statut n'est pas PAID
+      if (request.team.tournament.entryFee > 0 && request.paymentStatus !== "PAID") {
+        throw new Error("Le paiement de cette demande n'a pas été confirmé par Stripe.");
+      }
+
+      if (request.team._count.members >= request.team.maxCapacity) {
+        throw new Error("L'équipe est complète !");
+      }
+
+      // Mise à jour du statut de la demande
+      await tx.joinRequest.update({
+        where: { id: requestId },
+        data: { status: "ACCEPTED" }
+      });
+
+      // Connexion du joueur à l'équipe
+      await tx.team.update({
+        where: { id: request.teamId },
+        data: { members: { connect: { id: request.playerId } } }
+      });
+
+      revalidatePath("/admin/tournaments/[id]", "page");
+      revalidatePath("/my-requests");
+      
+      return { success: true };
     });
-
-    if (!request || request.status !== "PENDING") {
-      throw new Error("Demande invalide");
-    }
-
-    if (request.team._count.members >= request.team.maxCapacity) {
-      throw new Error("L'équipe est complète !");
-    }
-
-    await tx.joinRequest.update({
-      where: { id: requestId },
-      data: { status: "ACCEPTED" }
-    });
-
-    await tx.team.update({
-      where: { id: request.teamId },
-      data: { members: { connect: { id: request.playerId } } }
-    });
-
-    return { success: true };
-  });
+  } catch (e: any) {
+    return { error: e.message || "Une erreur est survenue" };
+  }
 }
 
 export async function cancelJoinRequest(requestId: string) {

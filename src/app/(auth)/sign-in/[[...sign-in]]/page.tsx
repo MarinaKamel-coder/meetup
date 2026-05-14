@@ -1,11 +1,11 @@
-// src/app/(auth)/sign-up/[[...sign-up]]/page.tsx
+// src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
 "use client"
 
-import { SignUp } from "@clerk/nextjs";
+import { SignIn } from "@clerk/nextjs";
 import { useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 
-export default function SignUpPage() {
+export default function SignInPage() {
   const searchParams = useSearchParams();
   const role = searchParams.get("role");
 
@@ -18,7 +18,7 @@ export default function SignUpPage() {
 
   return (
     <main className="min-h-screen bg-slate-950 flex items-center justify-center">
-      <SignUp />
+      <SignIn />
     </main>
   );
 }
