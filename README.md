@@ -39,9 +39,65 @@ Inspiré de Meetup.com, la plateforme permet de créer des ligues, gérer des é
 - Un compte [Stripe](https://stripe.com) en mode test
 
 ---
-
 ## 📦 Installation
 
 ### 1. Cloner le repository
 
 ```bash
+git clone https://github.com/MarinaKamel-coder/meetup.git
+cd meetup
+```
+
+### 2. Installer les dépendances
+
+```bash
+npm install
+```
+
+### 3. Configurer les variables d'environnement
+
+```bash
+cp .env.example .env
+```
+
+```env
+# Base de données Neon
+DATABASE_URL=postgresql://...
+
+# Clerk
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+CLERK_WEBHOOK_SECRET=whsec_...
+
+# Stripe
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+### 4. Générer le client Prisma
+
+```bash
+npx prisma generate
+```
+
+### 5. Appliquer les migrations
+
+```bash
+npx prisma migrate dev
+```
+
+### 6. Remplir la base de données
+
+```bash
+npm run db:seed
+```
+
+### 7. Lancer le serveur
+
+```bash
+npm run dev
+```
+
+L'application est disponible sur [http://localhost:3000](http://localhost:3000)
+
