@@ -61,15 +61,8 @@ export default async function TournamentDetailPage({
     orderBy: { date: "asc" },
   });
 
-  const levelLabels: Record<string, string> = {
-    BEGINNER: "🌱",
-    INTERMEDIATE: "⚡",
-    ADVANCED: "🔥",
-  };
-
   return (
     <div className="space-y-8">
-
       {/* Header tournoi */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-8 shadow-lg">
         <div className="absolute top-0 right-0 h-40 w-40 translate-x-8 -translate-y-8 rounded-full bg-emerald-500/20 blur-2xl" />
@@ -110,58 +103,23 @@ export default async function TournamentDetailPage({
         </div>
       </div>
 
-      {/* Équipes */}
+      {/* Section Équipes */}
       <div>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-slate-900">Équipes</h3>
-        </div>
+        <h3 className="text-lg font-semibold text-slate-900 mb-4">Équipes engagées</h3>
         {tournament.teams.length === 0 ? (
           <p className="text-sm text-slate-400 mb-4">Aucune équipe pour l&apos;instant.</p>
         ) : (
           <div className="space-y-4 mb-4">
             {tournament.teams.map((team) => (
-              <div key={team.id} className="rounded-xl border border-slate-200 bg-white p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <p className="font-semibold text-slate-900">{team.name}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      {team._count.members} / {team.maxCapacity} joueurs
-                    </p>
-                  </div>
+              <div key={team.id} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="mb-4">
+                  <p className="font-bold text-slate-900 text-lg">{team.name}</p>
+                  <p className="text-xs text-slate-500">
+                    {team._count.members} / {team.maxCapacity} joueurs
+                  </p>
                 </div>
 
-                {/* Membres */}
-                {team.members.length > 0 && (
-                  <div className="space-y-2 mb-4">
-                    {team.members.map((member) => (
-                      <div key={member.id} className="flex items-center gap-3 rounded-lg bg-slate-50 px-3 py-2">
-                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-xs font-black text-white shrink-0">
-                          {member.fullName.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-slate-900">{member.fullName}</p>
-                          <div className="flex flex-wrap gap-2 mt-0.5">
-                            {member.playerProfile?.city && (
-                              <span className="text-xs text-slate-400">📍 {member.playerProfile.city}</span>
-                            )}
-                            {member.playerProfile?.favoriteSport && (
-                              <span className="text-xs text-slate-400">🏅 {member.playerProfile.favoriteSport}</span>
-                            )}
-                            {member.playerProfile?.position && (
-                              <span className="text-xs text-slate-400">👤 {member.playerProfile.position}</span>
-                            )}
-                          </div>
-                        </div>
-                        {member.playerProfile?.level && (
-                          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700 shrink-0">
-                            {levelLabels[member.playerProfile.level]}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-
+                {/* On laisse TeamActions afficher la liste des membres et les boutons */}
                 <TeamActions team={{
                   id: team.id,
                   name: team.name,
@@ -177,7 +135,7 @@ export default async function TournamentDetailPage({
         <CreateTeamForm tournamentId={tournament.id} />
       </div>
 
-      {/* Matchs */}
+      {/* Section Matchs */}
       <div>
         <h3 className="text-lg font-semibold text-slate-900 mb-4">Matchs</h3>
         {matches.length === 0 ? (
@@ -187,13 +145,13 @@ export default async function TournamentDetailPage({
         ) : (
           <div className="space-y-3">
             {matches.map((match) => (
-              <div key={match.id} className="rounded-xl border border-slate-200 bg-white p-4">
+              <div key={match.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="flex items-center justify-center gap-4">
                   <p className="flex-1 font-bold text-slate-900 text-center">{match.teamA.name}</p>
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-500">VS</span>
+                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500">VS</span>
                   <p className="flex-1 font-bold text-slate-900 text-center">{match.teamB.name}</p>
                 </div>
-                <div className="mt-2 flex justify-between text-xs text-slate-400">
+                <div className="mt-2 flex justify-between text-[10px] text-slate-400 uppercase tracking-wider">
                   <span>📍 {match.location}</span>
                   <span>🗓 {new Date(match.date).toLocaleDateString("fr-CA")}</span>
                 </div>
@@ -208,7 +166,6 @@ export default async function TournamentDetailPage({
           />
         </div>
       </div>
-
     </div>
   );
 }
