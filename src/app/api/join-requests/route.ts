@@ -3,30 +3,27 @@ import prisma from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
 
 export async function GET(
-  req: Request, 
-  { params }: { params: { teamId?: string } } 
+  req: NextRequest, // Utilisation de NextRequest au lieu de Request
+  context: { params: Promise<{ teamId?: string }> } 
 ) {
   try {
     const { userId } = await auth();
-    if (!userId) {
-      return new NextResponse("Non autorisé", { status: 401 });
-    }
+    if (!userId) return new NextResponse("Unauthorized", { status: 401 });
 
-    // 1. Extraction propre des paramètres
+    // On attend les paramètres de manière asynchrone
+    const params = await context.params;
+    
     const { searchParams } = new URL(req.url);
     const queryTeamId = searchParams.get("teamId");
     
-    // On récupère le teamId (soit de l'URL dynamique, soit de la query string)
-    const finalTeamId = params?.teamId || queryTeamId;
+    const finalTeamId = params.teamId || queryTeamId;
 
-    // 2. Requête Prisma optimisée
     const requests = await prisma.joinRequest.findMany({
       where: { 
         ...(finalTeamId 
           ? { teamId: finalTeamId } 
           : { player: { clerkId: userId } }
         ),
-        // On ne montre que les demandes pertinentes
         paymentStatus: { in: ["PAID", "PENDING", "NOT_REQUIRED"] }
       },
       include: {
