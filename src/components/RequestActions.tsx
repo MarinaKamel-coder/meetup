@@ -26,7 +26,7 @@ export default function RequestActions({ requestId, paymentStatus, playerName }:
     type: "accepting" | "rejecting"
   ) {
     // Confirmation spécifique pour l'acceptation si non payé
-    if (type === "accepting" && paymentStatus !== "PAID" && paymentStatus !== "NOT_REQUIRED") {
+    if (type === "accepting" && paymentStatus !== "PAID" && paymentStatus !== "NOT_REQUIRED" && paymentStatus !== "PENDING") {
       const confirmText = `⚠️ Le paiement de ${playerName} n'est pas confirmé.\nAccepter quand même ?`;
       if (!window.confirm(confirmText)) return;
     }
