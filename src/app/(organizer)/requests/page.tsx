@@ -7,7 +7,6 @@ import {
   Clock, 
   MapPin, 
   Trophy, 
-  User, 
   ShieldCheck, 
   AlertCircle 
 } from "lucide-react";
@@ -24,11 +23,13 @@ export default async function RequestsPage() {
       team: {
         tournament: { organizerId: dbUser.id },
       },
-      // --- FILTRE DE SÉCURITÉ ---
-      // On masque les "PENDING" de Stripe pour éviter que l'organisateur accepte un impayé.
+      // --- FILTRE DE SÉCURITÉ ASSOUPLI ---
+      // On inclut PENDING pour que l'organisateur voie les demandes 
+      // même si le Webhook Stripe n'a pas encore répondu sur Vercel.
       OR: [
         { paymentStatus: "PAID" },
-        { paymentStatus: "NOT_REQUIRED" }
+        { paymentStatus: "NOT_REQUIRED" },
+        { paymentStatus: "PENDING" }
       ]
     },
     include: {
@@ -64,7 +65,7 @@ export default async function RequestsPage() {
               Demandes d&apos;adhésion
             </h2>
             <p className="mt-2 text-slate-400 font-medium max-w-md">
-              Gérez les candidatures entrantes. Seules les demandes avec paiement confirmé sont affichées.
+              Gérez les candidatures entrantes. Vérifiez le statut de paiement avant d&apos;accepter.
             </p>
           </div>
           
@@ -92,29 +93,33 @@ export default async function RequestsPage() {
               <CheckCircle2 className="w-8 h-8 text-emerald-500" />
             </div>
             <p className="text-lg font-black text-slate-900 italic">Tout est à jour !</p>
-            <p className="text-sm text-slate-400 font-medium">Aucune nouvelle demande à traiter pour le moment.</p>
+            <p className="text-sm text-slate-400 font-medium">Aucune nouvelle demande à traiter.</p>
           </div>
         ) : (
           <div className="grid gap-4">
             {pending.map((request) => (
               <div
                 key={request.id}
-                className="group relative rounded-[2rem] border border-slate-100 bg-white p-6 shadow-sm hover:shadow-xl hover:border-emerald-100 transition-all duration-300"
+                className="group relative rounded-[2rem] border border-slate-100 bg-white p-6 shadow-sm hover:shadow-xl transition-all duration-300"
               >
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                  {/* Profil Joueur */}
                   <div className="flex items-center gap-5">
-                    <div className="h-16 w-16 rounded-2xl bg-slate-900 flex items-center justify-center text-xl font-black text-white shadow-lg group-hover:scale-105 transition-transform">
+                    <div className="h-16 w-16 rounded-2xl bg-slate-900 flex items-center justify-center text-xl font-black text-white shadow-lg">
                       {request.player.fullName.charAt(0).toUpperCase()}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="font-black text-slate-900 text-xl italic uppercase tracking-tight">
+                        <p className="font-black text-slate-900 text-xl italic uppercase">
                           {request.player.fullName}
                         </p>
-                        {request.paymentStatus === "PAID" && (
+                        {/* BADGE DE STATUT DE PAIEMENT */}
+                        {request.paymentStatus === "PAID" ? (
                           <span className="bg-emerald-50 text-emerald-600 text-[9px] font-black px-2 py-0.5 rounded-full border border-emerald-100 uppercase">
                             Payé
+                          </span>
+                        ) : (
+                          <span className="bg-amber-50 text-amber-600 text-[9px] font-black px-2 py-0.5 rounded-full border border-amber-100 uppercase flex items-center gap-1">
+                            <AlertCircle className="w-2 h-2" /> Attente / Retour
                           </span>
                         )}
                       </div>
@@ -133,13 +138,16 @@ export default async function RequestsPage() {
                     </div>
                   </div>
 
-                  {/* Actions (Client Component) */}
+                  {/* Actions avec Props pour la Sécurité Alerte */}
                   <div className="flex items-center gap-3 self-end lg:self-center bg-slate-50 p-2 rounded-2xl">
-                    <RequestActions requestId={request.id} />
+                    <RequestActions 
+                      requestId={request.id} 
+                      paymentStatus={request.paymentStatus}
+                      playerName={request.player.fullName}
+                    />
                   </div>
                 </div>
 
-                {/* Détails de la demande */}
                 <div className="mt-6 pt-6 border-t border-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex items-center gap-2">
                     <div className="px-3 py-1 rounded-full bg-slate-100 text-[10px] font-black text-slate-600 uppercase">
@@ -168,7 +176,7 @@ export default async function RequestsPage() {
         )}
       </div>
 
-      {/* --- SECTION : TRAITÉES --- */}
+      {/* --- SECTION : HISTORIQUE --- */}
       {treated.length > 0 && (
         <div className="pt-8 border-t border-slate-100">
           <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-6 px-2">
@@ -186,7 +194,7 @@ export default async function RequestsPage() {
               >
                 <div className="flex items-center gap-4">
                   <div className={`h-10 w-10 rounded-xl flex items-center justify-center text-sm font-black text-white ${
-                    request.status === "ACCEPTED" ? "bg-emerald-500 shadow-lg shadow-emerald-100" : "bg-slate-400"
+                    request.status === "ACCEPTED" ? "bg-emerald-500" : "bg-slate-400"
                   }`}>
                     {request.player.fullName.charAt(0).toUpperCase()}
                   </div>
@@ -194,15 +202,13 @@ export default async function RequestsPage() {
                     <p className="text-sm font-black text-slate-900 uppercase italic">
                       {request.player.fullName}
                     </p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">
                       {request.team.name}
                     </p>
                   </div>
                 </div>
-                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                  request.status === "ACCEPTED" 
-                    ? "bg-emerald-50 text-emerald-600" 
-                    : "bg-slate-200 text-slate-500"
+                <div className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase ${
+                  request.status === "ACCEPTED" ? "bg-emerald-50 text-emerald-600" : "bg-slate-200 text-slate-500"
                 }`}>
                   {request.status === "ACCEPTED" ? "Acceptée" : "Refusée"}
                 </div>
