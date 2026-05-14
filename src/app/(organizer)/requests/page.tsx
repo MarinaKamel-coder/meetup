@@ -30,11 +30,7 @@ export default async function RequestsPage() {
         { paymentStatus: "PAID" },
         { paymentStatus: "NOT_REQUIRED" },
         { paymentStatus: "PENDING" }
-<<<<<<< HEAD
-      ]
-=======
       ],
->>>>>>> 571215f8d27fabc98d065cc415d930825fc26bd5
     },
     include: {
       player: {
