@@ -13,19 +13,14 @@ export async function GET(
   const resolvedParams = await params;
   const teamId = resolvedParams.teamId;
 
-  // Si tu passes le teamId par l'URL (ex: ?teamId=123), 
-  // on le récupère via searchParams au cas où le dossier n'est pas dynamique
-  const { searchParams } = new URL(request.url);
-  const queryTeamId = searchParams.get("teamId");
-
-  const finalTeamId = teamId || queryTeamId;
-
   // --- RÉCUPÉRATION DU ID ---
+  // Si tu passes le teamId par l'URL (ex: ?teamId=123),
+  // on le récupère via searchParams au cas où le dossier n'est pas dynamique
   const { searchParams } = new URL(req.url);
   const queryTeamId = searchParams.get("teamId");
-  
+
   // On prend teamId depuis params (si route dynamique) ou searchParams
-  const finalTeamId = params.teamId || queryTeamId;
+  const finalTeamId = teamId || queryTeamId;
 
   const requests = await prisma.joinRequest.findMany({
     where: { 

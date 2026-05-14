@@ -31,7 +31,7 @@ export default async function RequestsPage() {
         { paymentStatus: "NOT_REQUIRED" },
         { paymentStatus: "PENDING" }
       ]
-    },3h30
+    },
     include: {
       player: {
         include: { playerProfile: true },
