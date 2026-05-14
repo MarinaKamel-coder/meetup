@@ -128,6 +128,6 @@ model Match {
   tournamentId String
   tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   
-  teamA     Team     @relation("TeamA", fields: [teamAId], references: [id])
-  teamB     Team     @relation("TeamB", fields: [teamBId], references: [id])
+  teamA     Team     @relation("TeamA", fields: [teamAId], references: [id], onDelete: Cascade)
+  teamB     Team     @relation("TeamB", fields: [teamBId], references: [id], onDelete: Cascade)
 }
