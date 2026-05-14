@@ -56,9 +56,13 @@ export async function acceptJoinRequest(requestId: string) {
       }
 
       // --- SÉCURITÉ CRITIQUE : LE VERROU DE PAIEMENT ---
-      // Si le tournoi est payant (entryFee > 0) ET que le statut n'est pas PAID
-      if (request.team.tournament.entryFee > 0 && request.paymentStatus !== "PAID") {
-        throw new Error("Le paiement de cette demande n'a pas été confirmé par Stripe.");
+      // On autorise l'acceptation si c'est payé OU si c'est en attente (pour permettre la validation manuelle)
+      const isPaymentValid = request.team.tournament.entryFee === 0 || 
+                            request.paymentStatus === "PAID" || 
+                            request.paymentStatus === "PENDING";
+
+      if (!isPaymentValid) {
+        throw new Error("Le statut de paiement ne permet pas d'accepter cette demande.");
       }
 
       if (request.team._count.members >= request.team.maxCapacity) {
@@ -78,7 +82,7 @@ export async function acceptJoinRequest(requestId: string) {
       });
 
       revalidatePath("/admin/tournaments/[id]", "page");
-      revalidatePath("/my-requests");
+      revalidatePath("/(player)/my-requests");
       
       return { success: true };
     });
@@ -112,7 +116,7 @@ export async function cancelJoinRequest(requestId: string) {
 
     await prisma.joinRequest.delete({ where: { id: requestId } });
 
-    revalidatePath("/my-requests");
+    revalidatePath("/(player)/my-requests");
     revalidatePath(`/teams/${request.teamId}`);
 
     return { success: true };
@@ -134,7 +138,7 @@ export async function rejectJoinRequest(requestId: string) {
     data: { status: "REJECTED" },
   });
 
-  revalidatePath("/requests");
-  revalidatePath("/my-requests");
+  revalidatePath("/(organizer)/requests");
+  revalidatePath("/(player)/my-requests");
   return { success: true };
 } 
