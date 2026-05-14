@@ -25,6 +25,20 @@ export default async function TournamentDetailPage({
       teams: {
         include: {
           _count: { select: { members: true } },
+          members: {
+            select: {
+              id: true,
+              fullName: true,
+              playerProfile: {
+                select: {
+                  city: true,
+                  favoriteSport: true,
+                  level: true,
+                  position: true,
+                },
+              },
+            },
+          },
         },
       },
       _count: { select: { teams: true } },
@@ -46,6 +60,12 @@ export default async function TournamentDetailPage({
     },
     orderBy: { date: "asc" },
   });
+
+  const levelLabels: Record<string, string> = {
+    BEGINNER: "🌱",
+    INTERMEDIATE: "⚡",
+    ADVANCED: "🔥",
+  };
 
   return (
     <div className="space-y-8">
@@ -98,23 +118,57 @@ export default async function TournamentDetailPage({
         {tournament.teams.length === 0 ? (
           <p className="text-sm text-slate-400 mb-4">Aucune équipe pour l&apos;instant.</p>
         ) : (
-          <div className="space-y-3 mb-4">
+          <div className="space-y-4 mb-4">
             {tournament.teams.map((team) => (
-              <div key={team.id} className="rounded-xl border border-slate-200 bg-white p-4">
+              <div key={team.id} className="rounded-xl border border-slate-200 bg-white p-5">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <p className="font-medium text-slate-900">{team.name}</p>
+                    <p className="font-semibold text-slate-900">{team.name}</p>
                     <p className="text-xs text-slate-500 mt-0.5">
                       {team._count.members} / {team.maxCapacity} joueurs
                     </p>
                   </div>
                 </div>
+
+                {/* Membres */}
+                {team.members.length > 0 && (
+                  <div className="space-y-2 mb-4">
+                    {team.members.map((member) => (
+                      <div key={member.id} className="flex items-center gap-3 rounded-lg bg-slate-50 px-3 py-2">
+                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-xs font-black text-white shrink-0">
+                          {member.fullName.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-slate-900">{member.fullName}</p>
+                          <div className="flex flex-wrap gap-2 mt-0.5">
+                            {member.playerProfile?.city && (
+                              <span className="text-xs text-slate-400">📍 {member.playerProfile.city}</span>
+                            )}
+                            {member.playerProfile?.favoriteSport && (
+                              <span className="text-xs text-slate-400">🏅 {member.playerProfile.favoriteSport}</span>
+                            )}
+                            {member.playerProfile?.position && (
+                              <span className="text-xs text-slate-400">👤 {member.playerProfile.position}</span>
+                            )}
+                          </div>
+                        </div>
+                        {member.playerProfile?.level && (
+                          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700 shrink-0">
+                            {levelLabels[member.playerProfile.level]}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <TeamActions team={{
                   id: team.id,
                   name: team.name,
                   maxCapacity: team.maxCapacity,
                   tournamentId: tournament.id,
                   membersCount: team._count.members,
+                  members: team.members, 
                 }} />
               </div>
             ))}
